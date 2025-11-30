@@ -4,7 +4,15 @@ import pgPool from '../db/postgres';
 const router = Router();
 
 function requireAuth(req: Request, res: Response, next: Function) {
+  console.log('[AI Planning Auth Debug]', {
+    hasSession: !!req.session,
+    userId: req.session?.userId,
+    sessionId: req.sessionID,
+    cookies: req.headers.cookie ? 'YES' : 'NO'
+  });
+  
   if (!req.session.userId) {
+    console.error('[AI Planning Auth Failed] No userId in session');
     return res.status(401).json({ error: 'Not authenticated' });
   }
   next();
