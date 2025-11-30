@@ -41,20 +41,21 @@ sudo chmod +x init-db.sh deploy.sh
 echo ">>> [5/7] Instalando dependências npm..."
 cd $APP_DIR
 
-# Remove com sudo (não com sudo -u) para evitar permission denied
 echo "Limpando dependências antigas..."
 sudo rm -rf node_modules dist package-lock.json 2>/dev/null || true
 echo "✓ Limpeza concluída"
 
 echo "Instalando dependências npm..."
-sudo -u $APP_USER npm install --legacy-peer-deps 2>&1 | tail -5 || {
+# Executar como root durante setup para evitar permission issues
+npm install --legacy-peer-deps 2>&1 | tail -5 || {
     echo "ERRO: npm install falhou!"
     exit 1
 }
 
 echo "Compilando frontend..."
-sudo -u $APP_USER npm run build 2>&1 | tail -5 || true
+npm run build 2>&1 | tail -5 || true
 
+# Após instalação, dar permissões ao nodeapp
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
 sudo chmod -R 755 $APP_DIR
 

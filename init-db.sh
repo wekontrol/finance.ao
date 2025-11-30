@@ -25,17 +25,9 @@ ENVEOF
     chmod 600 "$ENV_FILE"
 fi
 
-# Garantir que PostgreSQL está rodando
-if ! sudo systemctl is-active --quiet postgresql 2>/dev/null; then
-    sudo systemctl start postgresql 2>/dev/null || true
-fi
+# PostgreSQL vai ser iniciado automaticamente pelo systemd
+# O .env.production já contém DATABASE_URL válido
+# A aplicação vai conectar usando as variáveis de ambiente
 
-# Aguardar PostgreSQL (max 30s)
-for i in {1..30}; do
-    if sudo -u postgres psql -c "SELECT 1" > /dev/null 2>&1; then
-        break
-    fi
-    sleep 1
-done
-
+sleep 2
 echo "✓ BD pronta"
