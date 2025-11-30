@@ -3,6 +3,34 @@
 ## Overview
 A comprehensive family financial management platform built with React, TypeScript, and Express.js, offering intelligent financial tracking and AI-powered insights. The application provides multi-language support with per-user preferences, per-provider AI routing, and a dedicated `TRANSLATOR` role for managing translations and adding new languages. It aims to be a production-ready, fully internationalized solution with a responsive, mobile-first UI. Key features include AI integration with multiple providers, automated translation management, real-time currency exchange rates, Excel import/export for transactions, PDF report generation, and system dark/light mode detection. The project also includes advanced AI planning features with caching and comparative charts for financial analysis.
 
+## Replit Environment Setup (November 30, 2025)
+
+### Development Environment
+- **Node.js Version:** 20.x
+- **Frontend Server:** Vite dev server on port 5000 (0.0.0.0:5000)
+- **Backend Server:** Express.js on port 3001 (localhost:3001)
+- **Database (Dev):** SQLite (data.db) for development
+- **Database (Prod):** PostgreSQL (Neon-backed) for production
+- **Workflow:** `npm run dev` - runs both frontend and backend concurrently
+
+### Configuration Files
+- **vite.config.ts:** Configured with host: '0.0.0.0', port: 5000, allowedHosts: true for Replit proxy
+- **server/index.ts:** Backend on port 3001 with CORS enabled for all origins
+- **package.json:** Scripts configured for concurrent dev server and production build
+- **.gitignore:** Properly configured to exclude node_modules, .replit/, and database files
+
+### Deployment Configuration
+- **Target:** Autoscale (stateless web application)
+- **Build Command:** `npm run build` (compiles Vite frontend to dist/)
+- **Run Command:** `npm start` (runs production server with static file serving)
+- **Production Mode:** Serves built static files from dist/ and uses PostgreSQL for sessions
+
+### Running the Application
+1. **Development:** The workflow "Start application" automatically runs `npm run dev`
+2. **Access:** Frontend available on Replit webview (proxied to port 5000)
+3. **Logs:** Check workflow logs for both frontend and backend output
+4. **Default Credentials:** Username: `admin`, Password: `admin`
+
 ## User Preferences
 Fast Mode development - small focused edits preferred.
 
