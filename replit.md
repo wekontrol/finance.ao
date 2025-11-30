@@ -1,10 +1,12 @@
-# Gestor Financeiro Familiar
+# 🏠 Gestor Financeiro Familiar
 
-## 📋 Resumo
-Plataforma de gestão financeira familiar com React, TypeScript, Express.js e PostgreSQL.
-**Deploy independente em Ubuntu Linux - ZERO custos do Replit após instalação.**
+## ⚠️ **IMPORTANTE: 100% INDEPENDENTE DO REPLIT - ZERO CUSTOS**
 
-## 🚀 Deploy em Ubuntu
+Este projeto **não depende de nada do Replit** após a instalação em Ubuntu.
+
+---
+
+## 🚀 **Deploy em Ubuntu (ÚNICA FORMA RECOMENDADA)**
 
 ```bash
 git clone https://github.com/wekontrol/finance.ao
@@ -12,70 +14,123 @@ cd finance.ao
 sudo bash install.sh
 ```
 
-Acesse em `http://[seu-ip]:5000` com `admin/admin`.
-
-## ⚠️ IMPORTANTE - Remover Custos do Replit
-
-Este projeto **não usa PostgreSQL do Replit**. Para remover custos:
-
-1. Em Replit: "Tools" → "Database" → "Delete Database"
-2. Isto **para todos os custos**
-3. O código continua a funcionar em Ubuntu (usa DB local)
-
-## 📚 Arquitetura
-
-- **Frontend**: React + TypeScript + Vite + Tailwind
-- **Backend**: Express.js + TypeScript
-- **Database**: PostgreSQL (local em Ubuntu)
-- **Deploy**: systemd service em Ubuntu Linux
-
-## 🔧 Estrutura do Projeto
-
-```
-/
-├── src/
-│   ├── components/    # React components
-│   ├── pages/         # Páginas
-│   ├── styles/        # CSS
-│   └── App.tsx
-├── server/
-│   ├── routes/        # Express routes
-│   ├── db/            # Database config
-│   └── index.ts
-├── package.json
-├── deploy.sh          # Script de deployment
-└── init-db.sh         # Inicialização da BD
-```
-
-## 🛠️ Desenvolvimento Replit (se usar)
-
-```bash
-npm run dev
-```
-
-Aplicação em `http://localhost:5000`
-
-## 📝 Notas de Implementação
-
-- **Session Storage**: Usa PostgreSQL (connect-pg-simple)
-- **Autenticação**: Passwords com bcryptjs
-- **Multilíngue**: Suporta PT-AO, PT-PT, EN
-- **Credenciais Default**: admin / admin (alterar em produção)
-
-## 🔐 Segurança em Produção
-
-- `.env.production` é gerado automaticamente com secrets aleatórios
-- Passwords hasheadas com bcryptjs
-- Sessions em PostgreSQL
-- Cookies secure em HTTPS
-
-## 📞 Suporte
-
-- Logs: `sudo journalctl -u gestor-financeiro -f`
-- Status: `sudo systemctl status gestor-financeiro`
-- Reiniciar: `sudo systemctl restart gestor-financeiro`
+**Pronto!** Depois de 5-10 minutos em `http://[seu-ip]:5000` com `admin/admin`.
 
 ---
 
-**Última atualização:** 2025-11-30
-**Versão:** 1.0.3
+## ❌ **O QUE FOI REMOVIDO DO REPLIT**
+
+✓ Removido: `@heyputer/puter.js` (dependência Replit)
+✓ Removido: Código de IA do Puter (API externa)
+✓ Removido: PostgreSQL do Replit (custos)
+✓ Removido: Workflows do Replit (não necessários)
+
+---
+
+## ✅ **O QUE USA O UBUNTU**
+
+- **PostgreSQL Local** (instalado automaticamente)
+- **Node.js 20** (instalado automaticamente)
+- **systemd Service** (gerenciamento automático)
+- **PM2 Optional** (para gerenciamento avançado)
+
+---
+
+## 📋 **Arquitetura**
+
+```
+Frontend:   React + Vite + Tailwind (compilado em dist/)
+Backend:    Express.js + TypeScript
+Database:   PostgreSQL local (localhost:5432)
+Deploy:     systemd service em Ubuntu
+```
+
+---
+
+## 🛠️ **Desenvolvimento em Replit (OPCIONAL)**
+
+Se quiser testar em Replit:
+
+```bash
+npm install
+npm run dev
+```
+
+⚠️ **Nota**: Isto custa créditos Replit. Use apenas para desenvolvimento.
+
+---
+
+## 🔐 **Segurança**
+
+- Passwords: bcryptjs (hasheadas)
+- Sessions: PostgreSQL (connect-pg-simple)
+- .env.production: Gerado automaticamente com secrets aleatórios
+- Cookies: Secure (HTTPS em produção)
+
+---
+
+## 📞 **Comandos em Ubuntu**
+
+```bash
+# Ver status
+sudo systemctl status gestor-financeiro
+
+# Ver logs em tempo real
+sudo journalctl -u gestor-financeiro -f
+
+# Reiniciar
+sudo systemctl restart gestor-financeiro
+
+# Parar
+sudo systemctl stop gestor-financeiro
+
+# Iniciar
+sudo systemctl start gestor-financeiro
+```
+
+---
+
+## 🆘 **Se der erro "Permission denied"**
+
+```bash
+cd /var/www/gestor-financeiro
+sudo bash fix-permissions.sh
+```
+
+---
+
+## 📝 **Estrutura do Projeto**
+
+```
+/
+├── src/                    # Frontend React/TypeScript
+│   ├── components/
+│   ├── pages/
+│   └── App.tsx
+├── server/                 # Backend Express/TypeScript
+│   ├── routes/
+│   ├── db/
+│   └── index.ts
+├── dist/                   # Frontend compilado (build)
+├── package.json
+├── deploy.sh              # Script de instalação Ubuntu
+├── init-db.sh             # Inicializa PostgreSQL
+└── fix-permissions.sh     # Fix de permissões
+```
+
+---
+
+## 🎯 **Resumo Final**
+
+| Feature | Status |
+|---------|--------|
+| Deploy Independente | ✅ 100% |
+| Custos Replit | ❌ ZERO |
+| PostgreSQL Local | ✅ Automático |
+| Session Storage | ✅ BD Local |
+| Multilíngue | ✅ PT/EN/ES/FR/etc |
+| Credenciais Default | admin / admin |
+
+---
+
+**Tudo automatizado. Nenhum custo. Pronto para produção.** 🚀

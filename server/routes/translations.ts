@@ -309,38 +309,7 @@ router.post('/ai-translate', requireTranslatorOrAdmin, async (req: Request, res:
     const fromName = langNames[fromLang] || fromLang;
     const toName = langNames[toLang] || toLang;
     
-    // Try to use Puter AI (free, no API key needed)
-    try {
-      const prompt = `Translate the following text from ${fromName} to ${toName}. 
-Only return the translated text, nothing else.
-Keep the same tone and style.
-If it's a UI element (button, label, menu item), keep it concise.
-
-Text to translate: "${text}"`;
-
-      // Use fetch to call Puter API directly
-      const response = await fetch('https://api.puter.com/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: prompt }],
-          model: 'gpt-4o-mini'
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const translation = data.message?.content || data.choices?.[0]?.message?.content || '';
-        return res.json({ 
-          translation: translation.trim().replace(/^["']|["']$/g, ''),
-          provider: 'puter'
-        });
-      }
-    } catch (puterError) {
-      console.log('[AI Translate] Puter failed, trying fallback...');
-    }
-    
-    // Fallback: simple dictionary for common words
+    // Simple dictionary for common words
     const commonTranslations: Record<string, Record<string, string>> = {
       'Save': { fr: 'Enregistrer', es: 'Guardar', um: 'Okusika', ln: 'Kobomba' },
       'Cancel': { fr: 'Annuler', es: 'Cancelar', um: 'Okutondola', ln: 'Koboya' },
