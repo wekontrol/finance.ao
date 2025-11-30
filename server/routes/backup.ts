@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
-import fs from 'fs';
-import path from 'path';
-import db from '../db/schema';
+import crypto from 'crypto';
+import pgPool from '../db/postgres';
 
 const router = Router();
 
@@ -28,29 +27,26 @@ router.get('/progress', requireAuth, requireAdmin, (req: Request, res: Response)
 });
 
 // POST - Create backup
-router.post('/', requireAuth, requireAdmin, (req: Request, res: Response) => {
+router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     backupProgress = { current: 10, total: 100, status: 'Inicializando...' };
 
-    const dbPath = path.join(process.cwd(), 'data.db');
-    if (!fs.existsSync(dbPath)) {
-      return res.status(404).json({ error: 'Database file not found' });
-    }
-
     backupProgress = { current: 30, total: 100, status: 'Lendo banco de dados...' };
-
-    // Read the entire database
-    const dbContent = fs.readFileSync(dbPath);
 
     backupProgress = { current: 70, total: 100, status: 'Exportando dados...' };
 
-    // Get all tables data
+    // Get all tables data from PostgreSQL
     const tables: Record<string, any[]> = {};
-    const tableNames = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+    const tableNamesResult = await pgPool.query(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+    );
+    const tableNames = tableNamesResult.rows;
     
-    tableNames.forEach((t: any) => {
-      tables[t.name] = db.prepare(`SELECT * FROM ${t.name}`).all();
-    });
+    for (const t of tableNames) {
+      const tableName = t.table_name;
+      const dataResult = await pgPool.query(`SELECT * FROM "${tableName}"`);
+      tables[tableName] = dataResult.rows;
+    }
 
     backupProgress = { current: 85, total: 100, status: 'Preparando arquivo...' };
 
@@ -58,7 +54,7 @@ router.post('/', requireAuth, requireAdmin, (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
       version: '1.0',
       tables,
-      dbHash: require('crypto').createHash('md5').update(dbContent).digest('hex')
+      dbHash: crypto.createHash('md5').update(JSON.stringify(tables)).digest('hex')
     };
 
     backupProgress = { current: 100, total: 100, status: 'Completo!' };
@@ -76,28 +72,38 @@ router.post('/', requireAuth, requireAdmin, (req: Request, res: Response) => {
 });
 
 // POST - Restore backup
-router.post('/restore', requireAuth, requireAdmin, (req: Request, res: Response) => {
+router.post('/restore', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  const client = await pgPool.connect();
+  
   try {
     const { backupData } = req.body;
 
     if (!backupData || !backupData.tables) {
+      client.release();
       return res.status(400).json({ error: 'Invalid backup data' });
     }
 
     backupProgress = { current: 10, total: 100, status: 'Iniciando restauro...' };
 
-    // Clear all existing tables
-    const tableNames = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all();
+    // Start transaction
+    await client.query('BEGIN');
+
+    // Get all existing tables
+    const tableNamesResult = await client.query(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name NOT LIKE 'pg_%'"
+    );
+    const tableNames = tableNamesResult.rows;
     
     backupProgress = { current: 20, total: 100, status: 'Limpando banco de dados...' };
     
-    tableNames.forEach((t: any) => {
+    // Clear all existing tables
+    for (const t of tableNames) {
       try {
-        db.prepare(`DELETE FROM ${t.name}`).run();
+        await client.query(`DELETE FROM "${t.table_name}"`);
       } catch (e) {
         // Table might not exist or have constraints
       }
-    });
+    }
 
     backupProgress = { current: 40, total: 100, status: 'Inserindo dados...' };
 
@@ -105,24 +111,27 @@ router.post('/restore', requireAuth, requireAdmin, (req: Request, res: Response)
     const tableList = Object.keys(backupData.tables);
     let processed = 0;
 
-    tableList.forEach(tableName => {
+    for (const tableName of tableList) {
       const rows = backupData.tables[tableName];
       if (rows && rows.length > 0) {
         const firstRow = rows[0];
         const columns = Object.keys(firstRow);
-        const placeholders = columns.map(() => '?').join(',');
-        const sql = `INSERT INTO ${tableName} (${columns.join(',')}) VALUES (${placeholders})`;
+        const placeholders = columns.map((_, i) => `$${i + 1}`).join(',');
+        const sql = `INSERT INTO "${tableName}" (${columns.map(c => `"${c}"`).join(',')}) VALUES (${placeholders})`;
         
-        const stmt = db.prepare(sql);
-        rows.forEach((row: any) => {
-          stmt.run(...columns.map(col => row[col]));
-        });
+        for (const row of rows) {
+          const values = columns.map(col => row[col]);
+          await client.query(sql, values);
+        }
       }
       
       processed++;
       const progress = 40 + Math.floor((processed / tableList.length) * 50);
       backupProgress = { current: progress, total: 100, status: `Restaurando ${tableName}...` };
-    });
+    }
+
+    // Commit transaction
+    await client.query('COMMIT');
 
     backupProgress = { current: 100, total: 100, status: 'Restauro completo!' };
 
@@ -132,8 +141,12 @@ router.post('/restore', requireAuth, requireAdmin, (req: Request, res: Response)
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
+    // Rollback transaction on error
+    await client.query('ROLLBACK');
     backupProgress = { current: 0, total: 100, status: 'Erro: ' + error.message };
     res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
   }
 });
 

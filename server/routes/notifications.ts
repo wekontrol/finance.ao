@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import db from '../db/schema';
+import pgPool from '../db/postgres';
 
 const router = Router();
 
@@ -13,70 +13,82 @@ function requireAuth(req: Request, res: Response, next: Function) {
 router.use(requireAuth);
 
 // Get notification preferences for current user
-router.get('/preferences', (req: Request, res: Response) => {
+router.get('/preferences', async (req: Request, res: Response) => {
   const userId = req.session!.userId as string;
   const user = req.session!.user as any;
   const isSuperAdmin = user && user.role === 'SUPER_ADMIN';
 
-  if (isSuperAdmin) {
-    // Get global preferences for super admin
-    const global = db.prepare(`
-      SELECT * FROM notification_preferences WHERE is_global = 1
-    `).get() as any;
-    
-    if (!global) {
-      const id = `np${Date.now()}`;
-      db.prepare(`
-        INSERT INTO notification_preferences (id, is_global, budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications)
-        VALUES (?, 1, 1, 1, 1, 1, 1, 1)
-      `).run(id);
-      const created = db.prepare(`SELECT * FROM notification_preferences WHERE id = ?`).get(id);
-      return res.json(created);
+  try {
+    if (isSuperAdmin) {
+      // Get global preferences for super admin
+      const globalResult = await pgPool.query(`
+        SELECT * FROM notification_preferences WHERE is_global = true
+      `);
+      const global = globalResult.rows[0];
+      
+      if (!global) {
+        const id = `np${Date.now()}`;
+        await pgPool.query(`
+          INSERT INTO notification_preferences (id, is_global, budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications)
+          VALUES ($1, true, true, true, true, true, true, true)
+        `, [id]);
+        const createdResult = await pgPool.query(`SELECT * FROM notification_preferences WHERE id = $1`, [id]);
+        return res.json(createdResult.rows[0]);
+      }
+      res.json(global);
+    } else {
+      // Get user-specific preferences
+      const prefsResult = await pgPool.query(`
+        SELECT * FROM notification_preferences WHERE user_id = $1 AND is_global = false
+      `, [userId]);
+      const prefs = prefsResult.rows[0];
+      
+      if (!prefs) {
+        const id = `np${Date.now()}`;
+        await pgPool.query(`
+          INSERT INTO notification_preferences (id, user_id, is_global, budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications)
+          VALUES ($1, $2, false, true, true, true, true, true, true)
+        `, [id, userId]);
+        const createdResult = await pgPool.query(`SELECT * FROM notification_preferences WHERE id = $1`, [id]);
+        return res.json(createdResult.rows[0]);
+      }
+      res.json(prefs);
     }
-    res.json(global);
-  } else {
-    // Get user-specific preferences
-    const prefs = db.prepare(`
-      SELECT * FROM notification_preferences WHERE user_id = ? AND is_global = 0
-    `).get(userId) as any;
-    
-    if (!prefs) {
-      const id = `np${Date.now()}`;
-      db.prepare(`
-        INSERT INTO notification_preferences (id, user_id, is_global, budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications)
-        VALUES (?, ?, 0, 1, 1, 1, 1, 1, 1)
-      `).run(id, userId);
-      const created = db.prepare(`SELECT * FROM notification_preferences WHERE id = ?`).get(id);
-      return res.json(created);
-    }
-    res.json(prefs);
+  } catch (error) {
+    console.error('Error fetching notification preferences:', error);
+    res.status(500).json({ error: 'Failed to fetch notification preferences' });
   }
 });
 
 // Update notification preferences
-router.post('/preferences', (req: Request, res: Response) => {
+router.post('/preferences', async (req: Request, res: Response) => {
   const userId = req.session!.userId as string;
   const user = req.session!.user as any;
   const { budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications } = req.body;
   const isSuperAdmin = user && user.role === 'SUPER_ADMIN';
 
-  if (isSuperAdmin) {
-    // Update global preferences
-    db.prepare(`
-      UPDATE notification_preferences 
-      SET budget_alerts = ?, subscription_alerts = ?, financial_tips = ?, goal_progress = ?, email_notifications = ?, push_notifications = ?
-      WHERE is_global = 1
-    `).run(budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications);
-  } else {
-    // Update user-specific preferences
-    db.prepare(`
-      UPDATE notification_preferences 
-      SET budget_alerts = ?, subscription_alerts = ?, financial_tips = ?, goal_progress = ?, email_notifications = ?, push_notifications = ?
-      WHERE user_id = ? AND is_global = 0
-    `).run(budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications, userId);
-  }
+  try {
+    if (isSuperAdmin) {
+      // Update global preferences
+      await pgPool.query(`
+        UPDATE notification_preferences 
+        SET budget_alerts = $1, subscription_alerts = $2, financial_tips = $3, goal_progress = $4, email_notifications = $5, push_notifications = $6
+        WHERE is_global = true
+      `, [budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications]);
+    } else {
+      // Update user-specific preferences
+      await pgPool.query(`
+        UPDATE notification_preferences 
+        SET budget_alerts = $1, subscription_alerts = $2, financial_tips = $3, goal_progress = $4, email_notifications = $5, push_notifications = $6
+        WHERE user_id = $7 AND is_global = false
+      `, [budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications, userId]);
+    }
 
-  res.json({ message: 'Preferences updated' });
+    res.json({ message: 'Preferences updated' });
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
+    res.status(500).json({ error: 'Failed to update notification preferences' });
+  }
 });
 
 export default router;

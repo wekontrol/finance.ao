@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../db/schema';
+import pgPool from '../db/postgres';
 
 const router = Router();
 
@@ -13,18 +13,18 @@ function requireAuth(req: Request, res: Response, next: Function) {
 
 router.use(requireAuth);
 
-router.get('/tasks', (req: Request, res: Response) => {
+router.get('/tasks', async (req: Request, res: Response) => {
   const user = req.session.user;
 
-  const tasks = db.prepare(`
+  const result = await pgPool.query(`
     SELECT t.*, u.name as assigned_to_name
     FROM family_tasks t
     LEFT JOIN users u ON t.assigned_to = u.id
-    WHERE t.family_id = ?
+    WHERE t.family_id = $1
     ORDER BY t.due_date ASC
-  `).all(user.familyId);
+  `, [user.familyId]);
 
-  const formattedTasks = tasks.map((t: any) => ({
+  const formattedTasks = result.rows.map((t: any) => ({
     id: t.id,
     description: t.description,
     assignedTo: t.assigned_to,
@@ -36,7 +36,7 @@ router.get('/tasks', (req: Request, res: Response) => {
   res.json(formattedTasks);
 });
 
-router.post('/tasks', (req: Request, res: Response) => {
+router.post('/tasks', async (req: Request, res: Response) => {
   const user = req.session.user;
   const { description, assignedTo, dueDate } = req.body;
 
@@ -46,17 +46,19 @@ router.post('/tasks', (req: Request, res: Response) => {
 
   const id = uuidv4();
   
-  db.prepare(`
+  await pgPool.query(`
     INSERT INTO family_tasks (id, family_id, description, assigned_to, due_date)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(id, user.familyId, description, assignedTo || null, dueDate || null);
+    VALUES ($1, $2, $3, $4, $5)
+  `, [id, user.familyId, description, assignedTo || null, dueDate || null]);
 
-  const task = db.prepare(`
+  const taskResult = await pgPool.query(`
     SELECT t.*, u.name as assigned_to_name
     FROM family_tasks t
     LEFT JOIN users u ON t.assigned_to = u.id
-    WHERE t.id = ?
-  `).get(id) as any;
+    WHERE t.id = $1
+  `, [id]);
+  
+  const task = taskResult.rows[0];
   
   res.status(201).json({
     id: task.id,
@@ -68,12 +70,14 @@ router.post('/tasks', (req: Request, res: Response) => {
   });
 });
 
-router.put('/tasks/:id', (req: Request, res: Response) => {
+router.put('/tasks/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.session.user;
   const { description, assignedTo, isCompleted, dueDate } = req.body;
 
-  const existing = db.prepare('SELECT * FROM family_tasks WHERE id = ?').get(id) as any;
+  const existingResult = await pgPool.query('SELECT * FROM family_tasks WHERE id = $1', [id]);
+  const existing = existingResult.rows[0];
+  
   if (!existing) {
     return res.status(404).json({ error: 'Task not found' });
   }
@@ -85,22 +89,24 @@ router.put('/tasks/:id', (req: Request, res: Response) => {
   const newValues = {
     description: description || existing.description,
     assignedTo: assignedTo !== undefined ? assignedTo : existing.assigned_to,
-    isCompleted: isCompleted !== undefined ? (isCompleted ? 1 : 0) : existing.is_completed,
+    isCompleted: isCompleted !== undefined ? isCompleted : existing.is_completed,
     dueDate: dueDate !== undefined ? dueDate : existing.due_date
   };
 
-  db.prepare(`
+  await pgPool.query(`
     UPDATE family_tasks 
-    SET description = ?, assigned_to = ?, is_completed = ?, due_date = ?
-    WHERE id = ?
-  `).run(newValues.description, newValues.assignedTo, newValues.isCompleted, newValues.dueDate, id);
+    SET description = $1, assigned_to = $2, is_completed = $3, due_date = $4
+    WHERE id = $5
+  `, [newValues.description, newValues.assignedTo, newValues.isCompleted, newValues.dueDate, id]);
 
-  const task = db.prepare(`
+  const taskResult = await pgPool.query(`
     SELECT t.*, u.name as assigned_to_name
     FROM family_tasks t
     LEFT JOIN users u ON t.assigned_to = u.id
-    WHERE t.id = ?
-  `).get(id) as any;
+    WHERE t.id = $1
+  `, [id]);
+  
+  const task = taskResult.rows[0];
   
   res.json({
     id: task.id,
@@ -112,11 +118,13 @@ router.put('/tasks/:id', (req: Request, res: Response) => {
   });
 });
 
-router.delete('/tasks/:id', (req: Request, res: Response) => {
+router.delete('/tasks/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.session.user;
 
-  const existing = db.prepare('SELECT * FROM family_tasks WHERE id = ?').get(id) as any;
+  const existingResult = await pgPool.query('SELECT * FROM family_tasks WHERE id = $1', [id]);
+  const existing = existingResult.rows[0];
+  
   if (!existing) {
     return res.status(404).json({ error: 'Task not found' });
   }
@@ -125,18 +133,18 @@ router.delete('/tasks/:id', (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  db.prepare('DELETE FROM family_tasks WHERE id = ?').run(id);
+  await pgPool.query('DELETE FROM family_tasks WHERE id = $1', [id]);
   res.json({ message: 'Task deleted' });
 });
 
-router.get('/events', (req: Request, res: Response) => {
+router.get('/events', async (req: Request, res: Response) => {
   const user = req.session.user;
 
-  const events = db.prepare(`
-    SELECT * FROM family_events WHERE family_id = ? ORDER BY date ASC
-  `).all(user.familyId);
+  const result = await pgPool.query(`
+    SELECT * FROM family_events WHERE family_id = $1 ORDER BY date ASC
+  `, [user.familyId]);
 
-  const formattedEvents = events.map((e: any) => ({
+  const formattedEvents = result.rows.map((e: any) => ({
     id: e.id,
     title: e.title,
     date: e.date,
@@ -147,7 +155,7 @@ router.get('/events', (req: Request, res: Response) => {
   res.json(formattedEvents);
 });
 
-router.post('/events', (req: Request, res: Response) => {
+router.post('/events', async (req: Request, res: Response) => {
   const user = req.session.user;
   const { title, date, type, description } = req.body;
 
@@ -157,12 +165,13 @@ router.post('/events', (req: Request, res: Response) => {
 
   const id = uuidv4();
   
-  db.prepare(`
+  await pgPool.query(`
     INSERT INTO family_events (id, family_id, title, date, type, description)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, user.familyId, title, date, type || 'general', description || null);
+    VALUES ($1, $2, $3, $4, $5, $6)
+  `, [id, user.familyId, title, date, type || 'general', description || null]);
 
-  const event = db.prepare('SELECT * FROM family_events WHERE id = ?').get(id) as any;
+  const eventResult = await pgPool.query('SELECT * FROM family_events WHERE id = $1', [id]);
+  const event = eventResult.rows[0];
   
   res.status(201).json({
     id: event.id,
@@ -173,12 +182,14 @@ router.post('/events', (req: Request, res: Response) => {
   });
 });
 
-router.put('/events/:id', (req: Request, res: Response) => {
+router.put('/events/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.session.user;
   const { title, date, type, description } = req.body;
 
-  const existing = db.prepare('SELECT * FROM family_events WHERE id = ?').get(id) as any;
+  const existingResult = await pgPool.query('SELECT * FROM family_events WHERE id = $1', [id]);
+  const existing = existingResult.rows[0];
+  
   if (!existing) {
     return res.status(404).json({ error: 'Event not found' });
   }
@@ -194,13 +205,14 @@ router.put('/events/:id', (req: Request, res: Response) => {
     description: description !== undefined ? description : existing.description
   };
 
-  db.prepare(`
+  await pgPool.query(`
     UPDATE family_events 
-    SET title = ?, date = ?, type = ?, description = ?
-    WHERE id = ?
-  `).run(newValues.title, newValues.date, newValues.type, newValues.description, id);
+    SET title = $1, date = $2, type = $3, description = $4
+    WHERE id = $5
+  `, [newValues.title, newValues.date, newValues.type, newValues.description, id]);
 
-  const event = db.prepare('SELECT * FROM family_events WHERE id = ?').get(id) as any;
+  const eventResult = await pgPool.query('SELECT * FROM family_events WHERE id = $1', [id]);
+  const event = eventResult.rows[0];
   
   res.json({
     id: event.id,
@@ -211,11 +223,13 @@ router.put('/events/:id', (req: Request, res: Response) => {
   });
 });
 
-router.delete('/events/:id', (req: Request, res: Response) => {
+router.delete('/events/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.session.user;
 
-  const existing = db.prepare('SELECT * FROM family_events WHERE id = ?').get(id) as any;
+  const existingResult = await pgPool.query('SELECT * FROM family_events WHERE id = $1', [id]);
+  const existing = existingResult.rows[0];
+  
   if (!existing) {
     return res.status(404).json({ error: 'Event not found' });
   }
@@ -224,7 +238,7 @@ router.delete('/events/:id', (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  db.prepare('DELETE FROM family_events WHERE id = ?').run(id);
+  await pgPool.query('DELETE FROM family_events WHERE id = $1', [id]);
   res.json({ message: 'Event deleted' });
 });
 

@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
-import db from '../db/schema';
+import pgPool from '../db/postgres';
 
 const router = Router();
 
-// Authentication middleware
 function requireAuth(req: Request, res: Response, next: Function) {
   if (!req.session.userId) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -11,7 +10,6 @@ function requireAuth(req: Request, res: Response, next: Function) {
   next();
 }
 
-// Apply authentication to all routes
 router.use(requireAuth);
 
 interface TransactionData {
@@ -68,40 +66,40 @@ interface AnalysisResult {
   }>;
 }
 
-// Get AI Planning Analysis (with caching)
-router.get('/analyze', (req: Request, res: Response) => {
+router.get('/analyze', async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId as string;
     const currentMonth = new Date().toISOString().slice(0, 7);
     const forceRefresh = req.query.refresh === 'true';
 
-    // Check cache if not forcing refresh
     if (!forceRefresh) {
       try {
-        const cache = db.prepare(`
+        const cacheResult = await pgPool.query(`
           SELECT analysis_data FROM ai_analysis_cache
-          WHERE user_id = ? AND month = ? AND expires_at > datetime('now')
-        `).get(userId, currentMonth) as { analysis_data: string } | undefined;
+          WHERE user_id = $1 AND month = $2 AND expires_at > NOW()
+        `, [userId, currentMonth]);
 
-        if (cache) {
+        if (cacheResult.rows.length > 0) {
           console.log(`[AI Planning] Cache HIT for user ${userId} month ${currentMonth}`);
-          return res.json(JSON.parse(cache.analysis_data));
+          return res.json(JSON.parse(cacheResult.rows[0].analysis_data));
         }
       } catch (cacheError) {
         console.warn(`[AI Planning] Cache read failed (table may not exist):`, cacheError);
-        // Continue without cache
       }
     }
 
-    // Fetch transactions
-    const transactions = db.prepare(`
+    const transactionsResult = await pgPool.query(`
       SELECT id, description, amount, date, category, type
       FROM transactions
-      WHERE user_id = ?
+      WHERE user_id = $1
       ORDER BY date DESC
-    `).all(userId) as TransactionData[];
+    `, [userId]);
 
-    // **CRITICAL FIX:** If no transactions, return empty analysis (not fictional data)
+    const transactions: TransactionData[] = transactionsResult.rows.map(row => ({
+      ...row,
+      amount: parseFloat(row.amount)
+    }));
+
     if (transactions.length === 0) {
       console.log(`[AI Planning] ⚠️ No transactions found for user ${userId}`);
       return res.json({
@@ -123,22 +121,30 @@ router.get('/analyze', (req: Request, res: Response) => {
       });
     }
 
-    // Fetch budgets with spending
-    const budgets = db.prepare(`
+    const budgetsResult = await pgPool.query(`
       SELECT DISTINCT category, limit_amount as "limit"
       FROM budget_limits
-      WHERE user_id = ?
-    `).all(userId) as Array<{ category: string; limit: number }>;
+      WHERE user_id = $1
+    `, [userId]);
 
-    // Calculate spending per category (current month)
-    const spendingByCategory = db.prepare(`
+    const budgets: Array<{ category: string; limit: number }> = budgetsResult.rows.map(row => ({
+      category: row.category,
+      limit: parseFloat(row.limit)
+    }));
+
+    const spendingByCategoryResult = await pgPool.query(`
       SELECT 
         category,
         SUM(CASE WHEN type = 'DESPESA' THEN amount ELSE 0 END) as spent
       FROM transactions
-      WHERE user_id = ? AND type = 'DESPESA' AND date LIKE ?
+      WHERE user_id = $1 AND type = 'DESPESA' AND date LIKE $2
       GROUP BY category
-    `).all(userId, `${currentMonth}%`) as Array<{ category: string; spent: number }>;
+    `, [userId, `${currentMonth}%`]);
+
+    const spendingByCategory: Array<{ category: string; spent: number }> = spendingByCategoryResult.rows.map(row => ({
+      category: row.category,
+      spent: parseFloat(row.spent) || 0
+    }));
 
     const spendingMap = new Map(spendingByCategory.map(s => [s.category, s.spent || 0]));
 
@@ -148,45 +154,55 @@ router.get('/analyze', (req: Request, res: Response) => {
       spent: spendingMap.get(b.category) || 0
     }));
 
-    // Fetch goals
-    const goals = db.prepare(`
+    const goalsResult = await pgPool.query(`
       SELECT id, name, target_amount, current_amount, deadline
       FROM savings_goals
-      WHERE user_id = ?
-    `).all(userId) as GoalData[];
+      WHERE user_id = $1
+    `, [userId]);
 
-    // Get historical monthly spending for comparisons
-    const monthlySpending = db.prepare(`
+    const goals: GoalData[] = goalsResult.rows.map(row => ({
+      ...row,
+      target_amount: parseFloat(row.target_amount),
+      current_amount: parseFloat(row.current_amount)
+    }));
+
+    const monthlySpendingResult = await pgPool.query(`
       SELECT 
         date,
         SUM(CASE WHEN type = 'DESPESA' THEN amount ELSE 0 END) as spent
       FROM transactions
-      WHERE user_id = ? AND type = 'DESPESA'
-      GROUP BY substr(date, 1, 7)
+      WHERE user_id = $1 AND type = 'DESPESA'
+      GROUP BY SUBSTRING(date FROM 1 FOR 7), date
       ORDER BY date DESC
       LIMIT 12
-    `).all(userId) as Array<{ date: string; spent: number }>;
+    `, [userId]);
 
-    // Calculate metrics
-    const analysis = calculateAnalysis(transactions, budgetData, goals);
+    const monthlySpending: Array<{ date: string; spent: number }> = monthlySpendingResult.rows.map(row => ({
+      date: row.date,
+      spent: parseFloat(row.spent) || 0
+    }));
+
+    const analysis = await calculateAnalysis(transactions, budgetData, goals);
     const fullResponse = {
       ...analysis,
       monthly_comparison: monthlySpending
     };
 
-    // Save to cache (expires in 30 minutes) - non-critical operation
     const cacheId = `cache_${userId}_${currentMonth}_${Date.now()}`;
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     
     try {
-      db.prepare(`
-        INSERT OR REPLACE INTO ai_analysis_cache (id, user_id, month, analysis_data, expires_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(cacheId, userId, currentMonth, JSON.stringify(fullResponse), expiresAt);
+      await pgPool.query(`
+        INSERT INTO ai_analysis_cache (id, user_id, month, analysis_data, expires_at)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (user_id, month) DO UPDATE SET
+          id = EXCLUDED.id,
+          analysis_data = EXCLUDED.analysis_data,
+          expires_at = EXCLUDED.expires_at
+      `, [cacheId, userId, currentMonth, JSON.stringify(fullResponse), expiresAt]);
       console.log(`[AI Planning] Cache SAVED for user ${userId} month ${currentMonth}`);
     } catch (cacheError) {
       console.warn(`[AI Planning] Cache write failed (table may not exist):`, cacheError);
-      // Continue - analysis is still valid without cache
     }
 
     res.json(fullResponse);
@@ -199,12 +215,11 @@ router.get('/analyze', (req: Request, res: Response) => {
   }
 });
 
-function calculateAnalysis(
+async function calculateAnalysis(
   transactions: TransactionData[],
   budgets: BudgetData[],
   goals: GoalData[]
-): AnalysisResult {
-  // 1. Health Score (0-100)
+): Promise<AnalysisResult> {
   const budgetCompliance = calculateBudgetCompliance(budgets);
   const savingsRate = calculateSavingsRate(transactions);
   const goalProgress = goals.length > 0 
@@ -214,7 +229,6 @@ function calculateAnalysis(
   const health_score = Math.round((budgetCompliance * 0.4 + savingsRate * 0.35 + goalProgress * 0.25));
   const health_grade = getHealthGrade(health_score);
 
-  // 2. Spending Trends
   const monthlySpending = calculateMonthlySpending(transactions);
   const recentMonths = Array.from(monthlySpending.values()).slice(-3);
   const month_avg = recentMonths.reduce((a, b) => a + b, 0) / Math.max(recentMonths.length, 1);
@@ -224,7 +238,6 @@ function calculateAnalysis(
 
   const trend = change_percent > 5 ? 'increasing' : change_percent < -5 ? 'decreasing' : 'stable';
 
-  // 3. Savings Potential
   const totalIncome = transactions
     .filter(t => t.type === 'RECEITA')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -233,7 +246,6 @@ function calculateAnalysis(
     .reduce((sum, t) => sum + t.amount, 0);
   const savings_potential = Math.max(0, totalIncome - totalExpense);
 
-  // 4. At-Risk Categories
   const at_risk_categories = budgets
     .filter(b => b.limit > 0 && b.spent > b.limit * 0.9)
     .map(b => ({
@@ -244,15 +256,13 @@ function calculateAnalysis(
     }))
     .sort((a, b) => b.percentage - a.percentage);
 
-  // 5. Suggestions
   const suggestions = generateSuggestions(transactions, budgets, health_score);
 
-  // 6. Goals Progress
-  const goals_progress = goals.map(g => {
+  const goals_progress = await Promise.all(goals.map(async g => {
     const progress_percent = Math.min(Math.round((g.current_amount / g.target_amount) * 100), 100);
     const monthsRemaining = calculateMonthsRemaining(g.deadline);
     const monthlyNeeded = (g.target_amount - g.current_amount) / Math.max(monthsRemaining, 1);
-    const currentMonthlyRate = calculateMonthlyContribution(g.id);
+    const currentMonthlyRate = await calculateMonthlyContribution(g.id);
     const on_track = currentMonthlyRate >= monthlyNeeded;
 
     return {
@@ -261,7 +271,7 @@ function calculateAnalysis(
       months_to_target: Math.max(monthsRemaining, 0),
       on_track
     };
-  });
+  }));
 
   return {
     health_score,
@@ -332,7 +342,6 @@ function generateSuggestions(
 }> {
   const suggestions: any[] = [];
 
-  // Suggestion 1: Overspending categories
   budgets.forEach(b => {
     if (b.limit > 0 && b.spent > b.limit * 1.1) {
       suggestions.push({
@@ -346,7 +355,6 @@ function generateSuggestions(
     }
   });
 
-  // Suggestion 2: Health score based
   if (healthScore < 70) {
     suggestions.push({
       id: 's2-reduce-spending',
@@ -358,7 +366,6 @@ function generateSuggestions(
     });
   }
 
-  // Suggestion 3: Large transactions
   const largeTransactions = transactions
     .filter(t => t.type === 'DESPESA')
     .sort((a, b) => b.amount - a.amount)
@@ -377,7 +384,6 @@ function generateSuggestions(
     });
   }
 
-  // Suggestion 4: Emergency fund
   suggestions.push({
     id: 's4-emergency',
     title: 'Criar fundo de emergência',
@@ -397,14 +403,14 @@ function calculateMonthsRemaining(deadline: string): number {
   return Math.max(months, 0);
 }
 
-function calculateMonthlyContribution(goalId: string): number {
-  const result = db.prepare(`
+async function calculateMonthlyContribution(goalId: string): Promise<number> {
+  const result = await pgPool.query(`
     SELECT SUM(amount) as total
     FROM goal_transactions
-    WHERE goal_id = ? AND date >= datetime('now', '-1 month')
-  `).get(goalId) as { total: number | null };
+    WHERE goal_id = $1 AND date >= NOW() - INTERVAL '1 month'
+  `, [goalId]);
 
-  return result?.total || 0;
+  return parseFloat(result.rows[0]?.total) || 0;
 }
 
 export default router;

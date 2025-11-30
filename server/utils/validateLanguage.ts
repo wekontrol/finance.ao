@@ -1,34 +1,34 @@
-import db from '../db/schema';
+import pgPool from '../db/postgres';
 
 /**
  * Get all keys from the base language (Portuguese)
  */
-export function getBaseLanguageKeys(): Set<string> {
-  const baseTranslations = db.prepare(`
+export async function getBaseLanguageKeys(): Promise<Set<string>> {
+  const result = await pgPool.query(`
     SELECT DISTINCT key FROM translations WHERE language = 'pt' AND status = 'active'
-  `).all();
+  `);
   
-  return new Set(baseTranslations.map((t: any) => t.key));
+  return new Set(result.rows.map((t: any) => t.key));
 }
 
 /**
  * Get all keys for a specific language
  */
-export function getLanguageKeys(language: string): Set<string> {
-  const translations = db.prepare(`
-    SELECT DISTINCT key FROM translations WHERE language = ? AND status = 'active'
-  `).all(language);
+export async function getLanguageKeys(language: string): Promise<Set<string>> {
+  const result = await pgPool.query(`
+    SELECT DISTINCT key FROM translations WHERE language = $1 AND status = 'active'
+  `, [language]);
   
-  return new Set(translations.map((t: any) => t.key));
+  return new Set(result.rows.map((t: any) => t.key));
 }
 
 /**
  * Validate that a language has all required keys
  * Returns: { isValid: boolean, missingKeys: string[], extraKeys: string[] }
  */
-export function validateLanguageCompleteness(language: string) {
-  const baseKeys = getBaseLanguageKeys();
-  const languageKeys = getLanguageKeys(language);
+export async function validateLanguageCompleteness(language: string) {
+  const baseKeys = await getBaseLanguageKeys();
+  const languageKeys = await getLanguageKeys(language);
   
   const missingKeys = Array.from(baseKeys).filter(key => !languageKeys.has(key));
   const extraKeys = Array.from(languageKeys).filter(key => !baseKeys.has(key));
@@ -46,19 +46,19 @@ export function validateLanguageCompleteness(language: string) {
 /**
  * Get languages that are complete (100% of keys)
  */
-export function getCompleteLanguages(): string[] {
-  const languages = db.prepare(`
+export async function getCompleteLanguages(): Promise<string[]> {
+  const result = await pgPool.query(`
     SELECT DISTINCT language FROM translations WHERE status = 'active' ORDER BY language
-  `).all();
+  `);
   
   const completeLanguages: string[] = [];
   
-  languages.forEach((lang: any) => {
-    const validation = validateLanguageCompleteness(lang.language);
+  for (const lang of result.rows) {
+    const validation = await validateLanguageCompleteness(lang.language);
     if (validation.isValid) {
       completeLanguages.push(lang.language);
     }
-  });
+  }
   
   return completeLanguages;
 }
@@ -66,23 +66,23 @@ export function getCompleteLanguages(): string[] {
 /**
  * Get all languages with their completion status
  */
-export function getAllLanguagesWithStatus(): Record<string, any> {
-  const languages = db.prepare(`
+export async function getAllLanguagesWithStatus(): Promise<Record<string, any>> {
+  const result = await pgPool.query(`
     SELECT DISTINCT language FROM translations WHERE status = 'active' ORDER BY language
-  `).all();
+  `);
   
-  const result: Record<string, any> = {};
+  const languages: Record<string, any> = {};
   
-  languages.forEach((lang: any) => {
-    const validation = validateLanguageCompleteness(lang.language);
-    result[lang.language] = {
+  for (const lang of result.rows) {
+    const validation = await validateLanguageCompleteness(lang.language);
+    languages[lang.language] = {
       isComplete: validation.isValid,
       completionPercentage: validation.completionPercentage,
       totalKeys: validation.totalHas,
       totalRequired: validation.totalRequired,
       missingCount: validation.missingKeys.length
     };
-  });
+  }
   
-  return result;
+  return languages;
 }

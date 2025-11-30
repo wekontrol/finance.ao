@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import db from '../db/schema';
+import pgPool from '../db/postgres';
 import { getCompleteLanguages, getAllLanguagesWithStatus, validateLanguageCompleteness } from '../utils/validateLanguage';
 
 const router = Router();
@@ -19,57 +19,77 @@ function requireTranslatorOrAdmin(req: Request, res: Response, next: Function) {
 }
 
 // Public endpoint - get ONLY COMPLETE languages (no auth required)
-router.get('/languages', (req: Request, res: Response) => {
-  const completeLanguages = getCompleteLanguages();
-  res.json(completeLanguages);
+router.get('/languages', async (req: Request, res: Response) => {
+  try {
+    const completeLanguages = await getCompleteLanguages();
+    res.json(completeLanguages);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Admin endpoint - get ALL languages with their completion status
-router.get('/languages/all', requireTranslatorOrAdmin, (req: Request, res: Response) => {
-  const allLanguages = getAllLanguagesWithStatus();
-  res.json(allLanguages);
+router.get('/languages/all', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
+  try {
+    const allLanguages = await getAllLanguagesWithStatus();
+    res.json(allLanguages);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Admin endpoint - validate a specific language
-router.get('/validate/:language', requireTranslatorOrAdmin, (req: Request, res: Response) => {
-  const { language } = req.params;
-  const validation = validateLanguageCompleteness(language);
-  res.json(validation);
+router.get('/validate/:language', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
+  try {
+    const { language } = req.params;
+    const validation = await validateLanguageCompleteness(language);
+    res.json(validation);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 router.use(requireAuth);
 
 // Get all translations for a language
-router.get('/language/:language', (req: Request, res: Response) => {
-  const { language } = req.params;
-  
-  const translations = db.prepare(`
-    SELECT key, value FROM translations WHERE language = ? AND status = 'active'
-    ORDER BY key
-  `).all(language);
+router.get('/language/:language', async (req: Request, res: Response) => {
+  try {
+    const { language } = req.params;
+    
+    const translationsResult = await pgPool.query(`
+      SELECT key, value FROM translations WHERE language = $1 AND status = 'active'
+      ORDER BY key
+    `, [language]);
 
-  const result: Record<string, string> = {};
-  translations.forEach((t: any) => {
-    result[t.key] = t.value;
-  });
+    const result: Record<string, string> = {};
+    translationsResult.rows.forEach((t: any) => {
+      result[t.key] = t.value;
+    });
 
-  res.json(result);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get all translation keys and languages (for translator editor)
-router.get('/editor/all', requireTranslatorOrAdmin, (req: Request, res: Response) => {
-  const translations = db.prepare(`
-    SELECT DISTINCT language, key, value, created_by, updated_at
-    FROM translations
-    WHERE status = 'active'
-    ORDER BY language, key
-  `).all();
+router.get('/editor/all', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
+  try {
+    const result = await pgPool.query(`
+      SELECT DISTINCT language, key, value, created_by, updated_at
+      FROM translations
+      WHERE status = 'active'
+      ORDER BY language, key
+    `);
 
-  res.json(translations);
+    res.json(result.rows);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Save translation
-router.post('/', requireTranslatorOrAdmin, (req: Request, res: Response) => {
+router.post('/', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const { language, key, value } = req.body;
 
@@ -80,10 +100,15 @@ router.post('/', requireTranslatorOrAdmin, (req: Request, res: Response) => {
   const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
 
   try {
-    db.prepare(`
-      INSERT OR REPLACE INTO translations (id, language, key, value, created_by, updated_at, status)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), 'active')
-    `).run(id, language, key, value, userId);
+    await pgPool.query(`
+      INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
+      VALUES ($1, $2, $3, $4, $5, NOW(), 'active')
+      ON CONFLICT (language, key) DO UPDATE SET
+        value = EXCLUDED.value,
+        created_by = EXCLUDED.created_by,
+        updated_at = NOW(),
+        status = 'active'
+    `, [id, language, key, value, userId]);
 
     res.status(201).json({ id, language, key, value });
   } catch (error: any) {
@@ -92,7 +117,7 @@ router.post('/', requireTranslatorOrAdmin, (req: Request, res: Response) => {
 });
 
 // Add new language
-router.post('/language/add', requireTranslatorOrAdmin, (req: Request, res: Response) => {
+router.post('/language/add', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   const { language, baseLanguage } = req.body;
   const userId = req.session.userId;
 
@@ -100,37 +125,43 @@ router.post('/language/add', requireTranslatorOrAdmin, (req: Request, res: Respo
     return res.status(400).json({ error: 'Language code is required' });
   }
 
-  // If baseLanguage provided, copy translations from base
-  if (baseLanguage) {
-    const baseTranslations = db.prepare(`
-      SELECT key, value FROM translations WHERE language = ? AND status = 'active'
-    `).all(baseLanguage);
+  try {
+    // If baseLanguage provided, copy translations from base
+    if (baseLanguage) {
+      const baseResult = await pgPool.query(`
+        SELECT key, value FROM translations WHERE language = $1 AND status = 'active'
+      `, [baseLanguage]);
 
-    baseTranslations.forEach((t: any) => {
-      const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-      db.prepare(`
-        INSERT OR IGNORE INTO translations (id, language, key, value, created_by, status)
-        VALUES (?, ?, ?, ?, ?, 'active')
-      `).run(id, language, t.key, t.value, userId);
+      for (const t of baseResult.rows) {
+        const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+        await pgPool.query(`
+          INSERT INTO translations (id, language, key, value, created_by, status)
+          VALUES ($1, $2, $3, $4, $5, 'active')
+          ON CONFLICT (language, key) DO NOTHING
+        `, [id, language, t.key, t.value, userId]);
+      }
+    }
+
+    // Validate the new language
+    const validation = await validateLanguageCompleteness(language);
+    
+    res.json({ 
+      message: `Language ${language} added successfully`,
+      validation
     });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
-
-  // Validate the new language
-  const validation = validateLanguageCompleteness(language);
-  
-  res.json({ 
-    message: `Language ${language} added successfully`,
-    validation
-  });
 });
 
 // Export translations as JSON
-router.get('/export', requireTranslatorOrAdmin, (req: Request, res: Response) => {
+router.get('/export', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   try {
-    const translations = db.prepare(`
+    const translationsResult = await pgPool.query(`
       SELECT language, key, value FROM translations WHERE status = 'active' ORDER BY language, key
-    `).all();
+    `);
 
+    const translations = translationsResult.rows;
     const languages = [...new Set(translations.map((t: any) => t.language))];
     const allKeys = [...new Set(translations.map((t: any) => t.key))];
     
@@ -151,7 +182,7 @@ router.get('/export', requireTranslatorOrAdmin, (req: Request, res: Response) =>
 });
 
 // Import translations from JSON
-router.post('/import', requireTranslatorOrAdmin, (req: Request, res: Response) => {
+router.post('/import', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const { language, translations: importedTranslations } = req.body;
 
@@ -164,10 +195,15 @@ router.post('/import', requireTranslatorOrAdmin, (req: Request, res: Response) =
     for (const [key, value] of Object.entries(importedTranslations)) {
       if (value && typeof value === 'string' && value.trim()) {
         const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-        db.prepare(`
-          INSERT OR REPLACE INTO translations (id, language, key, value, created_by, updated_at, status)
-          VALUES (?, ?, ?, ?, ?, datetime('now'), 'active')
-        `).run(id, language, key, value, userId);
+        await pgPool.query(`
+          INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
+          VALUES ($1, $2, $3, $4, $5, NOW(), 'active')
+          ON CONFLICT (language, key) DO UPDATE SET
+            value = EXCLUDED.value,
+            created_by = EXCLUDED.created_by,
+            updated_at = NOW(),
+            status = 'active'
+        `, [id, language, key, value, userId]);
         count++;
       }
     }
@@ -179,26 +215,26 @@ router.post('/import', requireTranslatorOrAdmin, (req: Request, res: Response) =
 });
 
 // Get statistics/completion percentage
-router.get('/stats', requireTranslatorOrAdmin, (req: Request, res: Response) => {
+router.get('/stats', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   try {
-    const languages = db.prepare(`
+    const languagesResult = await pgPool.query(`
       SELECT DISTINCT language FROM translations WHERE status = 'active'
-    `).all() as any[];
+    `);
 
     // Get total distinct keys
-    const totalResult = db.prepare(`
+    const totalResult = await pgPool.query(`
       SELECT COUNT(DISTINCT key) as count FROM translations WHERE status = 'active'
-    `).get() as any;
-    const totalKeys = totalResult?.count || 0;
+    `);
+    const totalKeys = parseInt(totalResult.rows[0]?.count) || 0;
 
-    const stats = languages.map((row: any) => {
+    const stats = await Promise.all(languagesResult.rows.map(async (row: any) => {
       const lang = row.language;
       
-      const translatedResult = db.prepare(`
+      const translatedResult = await pgPool.query(`
         SELECT COUNT(*) as count FROM translations 
-        WHERE language = ? AND status = 'active' AND value IS NOT NULL AND value != ''
-      `).get(lang) as any;
-      const translated = translatedResult?.count || 0;
+        WHERE language = $1 AND status = 'active' AND value IS NOT NULL AND value != ''
+      `, [lang]);
+      const translated = parseInt(translatedResult.rows[0]?.count) || 0;
 
       return {
         language: lang,
@@ -206,7 +242,7 @@ router.get('/stats', requireTranslatorOrAdmin, (req: Request, res: Response) => 
         translated: translated,
         percentage: totalKeys ? Math.round((translated / totalKeys) * 100) : 0
       };
-    });
+    }));
 
     res.json(stats);
   } catch (error: any) {
@@ -215,7 +251,7 @@ router.get('/stats', requireTranslatorOrAdmin, (req: Request, res: Response) => 
 });
 
 // Get translation history
-router.get('/history', requireTranslatorOrAdmin, (req: Request, res: Response) => {
+router.get('/history', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   try {
     const { language, key, limit = 50 } = req.query;
     
@@ -226,21 +262,24 @@ router.get('/history', requireTranslatorOrAdmin, (req: Request, res: Response) =
       WHERE 1=1
     `;
     const params: any[] = [];
+    let paramIndex = 1;
     
     if (language) {
-      query += ' AND h.language = ?';
+      query += ` AND h.language = $${paramIndex}`;
       params.push(language);
+      paramIndex++;
     }
     if (key) {
-      query += ' AND h.key LIKE ?';
+      query += ` AND h.key LIKE $${paramIndex}`;
       params.push(`%${key}%`);
+      paramIndex++;
     }
     
-    query += ' ORDER BY h.changed_at DESC LIMIT ?';
+    query += ` ORDER BY h.changed_at DESC LIMIT $${paramIndex}`;
     params.push(Number(limit));
     
-    const history = db.prepare(query).all(...params);
-    res.json(history);
+    const result = await pgPool.query(query, params);
+    res.json(result.rows);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -334,7 +373,7 @@ Text to translate: "${text}"`;
 });
 
 // Save translation WITH history
-router.post('/save-with-history', requireTranslatorOrAdmin, (req: Request, res: Response) => {
+router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const { language, key, value } = req.body;
 
@@ -344,26 +383,33 @@ router.post('/save-with-history', requireTranslatorOrAdmin, (req: Request, res: 
 
   try {
     // Get old value for history
-    const existing = db.prepare(
-      'SELECT id, value FROM translations WHERE language = ? AND key = ? AND status = ?'
-    ).get(language, key, 'active') as any;
+    const existingResult = await pgPool.query(
+      'SELECT id, value FROM translations WHERE language = $1 AND key = $2 AND status = $3',
+      [language, key, 'active']
+    );
+    const existing = existingResult.rows[0];
     
     const oldValue = existing?.value || null;
     const translationId = existing?.id || `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
     
     // Save new translation
-    db.prepare(`
-      INSERT OR REPLACE INTO translations (id, language, key, value, created_by, updated_at, status)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), 'active')
-    `).run(translationId, language, key, value, userId);
+    await pgPool.query(`
+      INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
+      VALUES ($1, $2, $3, $4, $5, NOW(), 'active')
+      ON CONFLICT (language, key) DO UPDATE SET
+        value = EXCLUDED.value,
+        created_by = EXCLUDED.created_by,
+        updated_at = NOW(),
+        status = 'active'
+    `, [translationId, language, key, value, userId]);
     
     // Save history if value changed
     if (oldValue !== value) {
       const historyId = `th${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-      db.prepare(`
+      await pgPool.query(`
         INSERT INTO translation_history (id, translation_id, language, key, old_value, new_value, changed_by, change_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(historyId, translationId, language, key, oldValue, value, userId, oldValue ? 'update' : 'create');
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [historyId, translationId, language, key, oldValue, value, userId, oldValue ? 'update' : 'create']);
     }
 
     res.status(201).json({ id: translationId, language, key, value, historyRecorded: oldValue !== value });

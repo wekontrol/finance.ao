@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import db from '../db/schema';
+import pgPool from '../db/postgres';
 
 const router = Router();
 
@@ -13,25 +13,28 @@ function requireAuth(req: Request, res: Response, next: Function) {
 
 router.use(requireAuth);
 
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   const user = req.session.user;
 
   let users;
   if (user.role === 'SUPER_ADMIN') {
-    users = db.prepare(`
+    const result = await pgPool.query(`
       SELECT id, username, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
       FROM users
-    `).all();
+    `);
+    users = result.rows;
   } else if (user.role === 'MANAGER') {
-    users = db.prepare(`
+    const result = await pgPool.query(`
       SELECT id, username, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-      FROM users WHERE family_id = ?
-    `).all(user.familyId);
+      FROM users WHERE family_id = $1
+    `, [user.familyId]);
+    users = result.rows;
   } else {
-    users = db.prepare(`
+    const result = await pgPool.query(`
       SELECT id, username, name, role, avatar, status, family_id
-      FROM users WHERE id = ?
-    `).all(req.session.userId);
+      FROM users WHERE id = $1
+    `, [req.session.userId]);
+    users = result.rows;
   }
 
   const formattedUsers = users.map((u: any) => ({
@@ -50,7 +53,7 @@ router.get('/', (req: Request, res: Response) => {
   res.json(formattedUsers);
 });
 
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const currentUser = req.session.user;
   const { username, password, name, role, birthDate, allowParentView, familyId } = req.body;
 
@@ -62,7 +65,8 @@ router.post('/', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
-  const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+  const existingResult = await pgPool.query('SELECT id FROM users WHERE username = $1', [username]);
+  const existingUser = existingResult.rows[0];
   if (existingUser) {
     return res.status(409).json({ error: 'Username already exists' });
   }
@@ -70,7 +74,6 @@ router.post('/', (req: Request, res: Response) => {
   const id = `u${Date.now()}`;
   const hashedPassword = bcrypt.hashSync(password, 10);
 
-  // Orçamentos padrão por categoria
   const defaultBudgets = [
     { category: 'Renda', limit: 0 },
     { category: 'Energia', limit: 150 },
@@ -94,10 +97,10 @@ router.post('/', (req: Request, res: Response) => {
     newFamilyId = familyId;
   }
 
-  db.prepare(`
+  await pgPool.query(`
     INSERT INTO users (id, username, password, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+  `, [
     id,
     username,
     hashedPassword,
@@ -108,22 +111,22 @@ router.post('/', (req: Request, res: Response) => {
     req.session.userId,
     newFamilyId,
     birthDate || null,
-    allowParentView ? 1 : 0
-  );
+    allowParentView ? true : false
+  ]);
 
-  // Cria orçamentos padrão para o novo usuário
-  defaultBudgets.forEach((budget: any) => {
+  for (const budget of defaultBudgets) {
     const budgetId = `bl${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-    db.prepare(`
+    await pgPool.query(`
       INSERT INTO budget_limits (id, user_id, category, limit_amount, is_default)
-      VALUES (?, ?, ?, ?, 1)
-    `).run(budgetId, id, budget.category, budget.limit);
-  });
+      VALUES ($1, $2, $3, $4, true)
+    `, [budgetId, id, budget.category, budget.limit]);
+  }
 
-  const user = db.prepare(`
+  const userResult = await pgPool.query(`
     SELECT id, username, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-    FROM users WHERE id = ?
-  `).get(id) as any;
+    FROM users WHERE id = $1
+  `, [id]);
+  const user = userResult.rows[0];
 
   res.status(201).json({
     id: user.id,
@@ -139,7 +142,7 @@ router.post('/', (req: Request, res: Response) => {
   });
 });
 
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const currentUser = req.session.user;
   const { name, role, status, birthDate, allowParentView, password } = req.body;
@@ -153,49 +156,57 @@ router.put('/:id', (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Not authorized' });
   }
 
-  const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as any;
+  const existingResult = await pgPool.query('SELECT * FROM users WHERE id = $1', [id]);
+  const existing = existingResult.rows[0];
   if (!existing) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  let updateQuery = 'UPDATE users SET name = ?';
+  let updateQuery = 'UPDATE users SET name = $1';
   let params: any[] = [name || existing.name];
+  let paramIndex = 2;
 
   if (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'MANAGER') {
     if (role) {
-      updateQuery += ', role = ?';
+      updateQuery += `, role = $${paramIndex}`;
       params.push(role);
+      paramIndex++;
     }
     if (status) {
-      updateQuery += ', status = ?';
+      updateQuery += `, status = $${paramIndex}`;
       params.push(status);
+      paramIndex++;
     }
   }
 
   if (birthDate !== undefined) {
-    updateQuery += ', birth_date = ?';
+    updateQuery += `, birth_date = $${paramIndex}`;
     params.push(birthDate);
+    paramIndex++;
   }
 
   if (allowParentView !== undefined) {
-    updateQuery += ', allow_parent_view = ?';
-    params.push(allowParentView ? 1 : 0);
+    updateQuery += `, allow_parent_view = $${paramIndex}`;
+    params.push(allowParentView ? true : false);
+    paramIndex++;
   }
 
   if (password) {
-    updateQuery += ', password = ?';
+    updateQuery += `, password = $${paramIndex}`;
     params.push(bcrypt.hashSync(password, 10));
+    paramIndex++;
   }
 
-  updateQuery += ' WHERE id = ?';
+  updateQuery += ` WHERE id = $${paramIndex}`;
   params.push(id);
 
-  db.prepare(updateQuery).run(...params);
+  await pgPool.query(updateQuery, params);
 
-  const user = db.prepare(`
+  const userResult = await pgPool.query(`
     SELECT id, username, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-    FROM users WHERE id = ?
-  `).get(id) as any;
+    FROM users WHERE id = $1
+  `, [id]);
+  const user = userResult.rows[0];
 
   res.json({
     id: user.id,
@@ -211,7 +222,7 @@ router.put('/:id', (req: Request, res: Response) => {
   });
 });
 
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const currentUser = req.session.user;
 
@@ -223,13 +234,14 @@ router.delete('/:id', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Cannot delete your own account' });
   }
 
-  const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  const existingResult = await pgPool.query('SELECT * FROM users WHERE id = $1', [id]);
+  const existing = existingResult.rows[0];
   if (!existing) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  db.prepare('DELETE FROM budget_limits WHERE user_id = ?').run(id);
-  db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  await pgPool.query('DELETE FROM budget_limits WHERE user_id = $1', [id]);
+  await pgPool.query('DELETE FROM users WHERE id = $1', [id]);
   res.json({ message: 'User deleted' });
 });
 

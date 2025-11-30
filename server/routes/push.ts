@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import db from '../db/schema';
+import pgPool from '../db/postgres';
 
 const router = Router();
 
@@ -12,8 +12,7 @@ function requireAuth(req: Request, res: Response, next: Function) {
 
 router.use(requireAuth);
 
-// Subscribe to push notifications
-router.post('/subscribe', (req: Request, res: Response) => {
+router.post('/subscribe', async (req: Request, res: Response) => {
   const userId = req.session!.userId as string;
   const { subscription } = req.body;
 
@@ -25,11 +24,11 @@ router.post('/subscribe', (req: Request, res: Response) => {
     const id = `ps${Date.now()}`;
     const subscriptionJson = JSON.stringify(subscription);
     
-    db.prepare(`
+    await pgPool.query(`
       INSERT INTO push_subscriptions (id, user_id, subscription, user_agent)
-      VALUES (?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT(user_id, subscription) DO UPDATE SET last_active = CURRENT_TIMESTAMP
-    `).run(id, userId, subscriptionJson, req.headers['user-agent'] || '');
+    `, [id, userId, subscriptionJson, req.headers['user-agent'] || '']);
 
     res.json({ message: 'Subscribed to push notifications' });
   } catch (error: any) {
@@ -38,8 +37,7 @@ router.post('/subscribe', (req: Request, res: Response) => {
   }
 });
 
-// Unsubscribe from push notifications
-router.post('/unsubscribe', (req: Request, res: Response) => {
+router.post('/unsubscribe', async (req: Request, res: Response) => {
   const userId = req.session!.userId as string;
   const { subscription } = req.body;
 
@@ -49,9 +47,9 @@ router.post('/unsubscribe', (req: Request, res: Response) => {
 
   try {
     const subscriptionJson = JSON.stringify(subscription);
-    db.prepare(`
-      DELETE FROM push_subscriptions WHERE user_id = ? AND subscription = ?
-    `).run(userId, subscriptionJson);
+    await pgPool.query(`
+      DELETE FROM push_subscriptions WHERE user_id = $1 AND subscription = $2
+    `, [userId, subscriptionJson]);
 
     res.json({ message: 'Unsubscribed from push notifications' });
   } catch (error: any) {
@@ -60,18 +58,18 @@ router.post('/unsubscribe', (req: Request, res: Response) => {
   }
 });
 
-// Get push subscription status
-router.get('/status', (req: Request, res: Response) => {
+router.get('/status', async (req: Request, res: Response) => {
   const userId = req.session!.userId as string;
 
   try {
-    const count = db.prepare(`
-      SELECT COUNT(*) as count FROM push_subscriptions WHERE user_id = ?
-    `).get(userId) as any;
+    const result = await pgPool.query(`
+      SELECT COUNT(*) as count FROM push_subscriptions WHERE user_id = $1
+    `, [userId]);
+    const count = result.rows[0];
 
     res.json({ 
-      isSubscribed: count.count > 0,
-      subscriptionCount: count.count
+      isSubscribed: parseInt(count.count) > 0,
+      subscriptionCount: parseInt(count.count)
     });
   } catch (error: any) {
     console.error('Error checking status:', error);
@@ -79,7 +77,6 @@ router.get('/status', (req: Request, res: Response) => {
   }
 });
 
-// Send test notification (Admin only)
 router.post('/test', (req: Request, res: Response) => {
   const user = req.session!.user as any;
   
