@@ -283,7 +283,7 @@ export async function initializeDatabase() {
 
     // Load translations from JSON files
     const translationsResult = await pgPool.query('SELECT COUNT(*) as count FROM translations');
-    if (parseInt(translationsResult.rows[0].count) === 0) {
+    if (parseInt(translationsResult.rows[0]?.count || '0') === 0) {
       const localesDir = path.join(process.cwd(), 'public', 'locales');
       
       try {

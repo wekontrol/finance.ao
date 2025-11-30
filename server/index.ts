@@ -34,17 +34,29 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
   console.log('✅ Environment variables validated');
+} else {
+  console.log('ℹ️  Development mode: DATABASE_URL optional');
 }
 
 // Initialize database before anything else
+// In production (Ubuntu), DATABASE_URL must be set
+// In development (Replit), it's optional - we skip DB init if not available
 (async () => {
   try {
-    await initializeDatabase();
-    await initializeSessionsTable();
-    console.log('✅ Database initialization completed');
+    if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) {
+      await initializeDatabase();
+      await initializeSessionsTable();
+      console.log('✅ Database initialization completed');
+    } else {
+      console.log('⚠️  DATABASE_URL not set - skipping database initialization (development mode)');
+    }
   } catch (error) {
-    console.error('Database initialization failed:', error);
-    process.exit(1);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Database initialization failed:', error);
+      process.exit(1);
+    } else {
+      console.warn('⚠️  Database initialization warning (non-critical in development):', error);
+    }
   }
 })();
 
@@ -65,13 +77,22 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const sessionSecret = process.env.SESSION_SECRET || 'gestor-financeiro-secret-key-2024';
 
-// Session store configuration - always use PostgreSQL
-const PgStore = ConnectPgSimple(session);
-const sessionStore = new PgStore({
-  pool: pgPool,
-  tableName: 'session',
-  createTableIfMissing: true,
-});
+// Session store configuration - use PostgreSQL if available, otherwise memory
+let sessionStore: any;
+if (process.env.DATABASE_URL) {
+  const PgStore = ConnectPgSimple(session);
+  sessionStore = new PgStore({
+    pool: pgPool,
+    tableName: 'session',
+    createTableIfMissing: true,
+  });
+  console.log('✅ Using PostgreSQL session store');
+} else {
+  // Simple memory store for development (non-persistent, development only)
+  const MemoryStore = session.MemoryStore;
+  sessionStore = new MemoryStore();
+  console.log('⚠️  Using memory session store (development/testing only)');
+}
 
 // Session middleware - must be before route handlers
 app.use(session({

@@ -167,9 +167,9 @@ router.get('/export', requireTranslatorOrAdmin, async (req: Request, res: Respon
     
     const result: Record<string, Record<string, string>> = {};
     
-    languages.forEach(lang => {
+    languages.forEach((lang: any) => {
       result[lang] = {};
-      allKeys.forEach(key => {
+      allKeys.forEach((key: any) => {
         const trans = translations.find((t: any) => t.language === lang && t.key === key) as { value?: string } | undefined;
         result[lang][key] = trans?.value || '';
       });
