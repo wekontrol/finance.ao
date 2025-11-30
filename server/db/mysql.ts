@@ -49,4 +49,5 @@ export async function initializeSessionsTable() {
   }
 }
 
+export { pool as rawPool };
 export default pool;

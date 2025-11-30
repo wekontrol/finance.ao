@@ -1,4 +1,4 @@
-import pool from './index';
+import { rawPool } from './mysql';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
@@ -7,7 +7,7 @@ export async function initializeDatabase() {
   try {
     // Create all tables for MySQL
     // MySQL syntax with maximum SQLite compatibility
-    const connection = await (pool as any).getConnection();
+    const connection = await rawPool.getConnection();
     
     await connection.query(`
       CREATE TABLE IF NOT EXISTS families (
