@@ -100,14 +100,15 @@ router.post('/', requireTranslatorOrAdmin, async (req: Request, res: Response) =
   const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
 
   try {
+    const now = new Date().toISOString();
     await pgPool.query(`
       INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
-      VALUES (?, ?, ?, ?, ?, NOW(), 'active')
+      VALUES (?, ?, ?, ?, ?, ?, 'active')
       ON DUPLICATE KEY UPDATE
         value = ?,
-        updated_at = NOW(),
+        updated_at = ?,
         status = 'active'
-    `, [id, language, key, value, userId]);
+    `, [id, language, key, value, userId, now, value, now]);
 
     res.status(201).json({ id, language, key, value });
   } catch (error: any) {
@@ -191,18 +192,19 @@ router.post('/import', requireTranslatorOrAdmin, async (req: Request, res: Respo
 
   try {
     let count = 0;
+    const now = new Date().toISOString();
     for (const [key, value] of Object.entries(importedTranslations)) {
       if (value && typeof value === 'string' && value.trim()) {
         const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
         await pgPool.query(`
           INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
-          VALUES (?, ?, ?, ?, ?, NOW(), 'active')
+          VALUES (?, ?, ?, ?, ?, ?, 'active')
           ON DUPLICATE KEY UPDATE
-            value = VALUES(value,
-            created_by = VALUES(created_by,
-            updated_at = NOW(),
+            value = ?,
+            created_by = ?,
+            updated_at = ?,
             status = 'active'
-        `, [id, language, key, value, userId]);
+        `, [id, language, key, value, userId, now, value, userId, now]);
         count++;
       }
     }
@@ -261,20 +263,17 @@ router.get('/history', requireTranslatorOrAdmin, async (req: Request, res: Respo
       WHERE 1=1
     `;
     const params: any[] = [];
-    let paramIndex = 1;
     
     if (language) {
-      query += ` AND h.language = $${paramIndex}`;
+      query += ` AND h.language = ?`;
       params.push(language);
-      paramIndex++;
     }
     if (key) {
-      query += ` AND h.key LIKE $${paramIndex}`;
+      query += ` AND h.key LIKE ?`;
       params.push(`%${key}%`);
-      paramIndex++;
     }
     
-    query += ` ORDER BY h.changed_at DESC LIMIT $${paramIndex}`;
+    query += ` ORDER BY h.changed_at DESC LIMIT ?`;
     params.push(Number(limit));
     
     const result = await pgPool.query(query, params);

@@ -25,8 +25,8 @@ router.post('/', async (req: Request, res: Response) => {
     await pgPool.query(`
       INSERT INTO app_settings (key, value) 
       VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE value = VALUES(value
-    `, [key, value]);
+      ON DUPLICATE KEY UPDATE value = ?
+    `, [key, value, value]);
     res.json({ success: true });
   } catch (error: any) {
     console.error('Error updating settings:', error);
@@ -88,9 +88,10 @@ router.post('/api-configs', async (req: Request, res: Response) => {
     const { id, provider, apiKey, model } = req.body;
     console.log('[POST /api-configs] Parsed:', { id, provider, model, hasKey: !!apiKey });
 
+    const now = new Date().toISOString();
     if (id) {
       console.log('[POST /api-configs] Updating config:', id);
-      await pgPool.query(`UPDATE api_configurations SET api_key = ?, model = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [apiKey, model || null, id]);
+      await pgPool.query(`UPDATE api_configurations SET api_key = ?, model = ?, updated_at = ? WHERE id = ?`, [apiKey, model || null, now, id]);
       console.log('[POST /api-configs] Update successful');
     } else {
       // Check if provider already exists
@@ -99,7 +100,7 @@ router.post('/api-configs', async (req: Request, res: Response) => {
       
       if (existing) {
         // Update existing provider
-        await pgPool.query(`UPDATE api_configurations SET api_key = ?, model = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ?`, [apiKey, model || null, provider]);
+        await pgPool.query(`UPDATE api_configurations SET api_key = ?, model = ?, updated_at = ? WHERE provider = ?`, [apiKey, model || null, now, provider]);
         console.log('[POST /api-configs] Updated existing provider:', provider);
       } else {
         // Insert new

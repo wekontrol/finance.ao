@@ -82,10 +82,11 @@ router.get('/analyze', async (req: Request, res: Response) => {
 
     if (!forceRefresh) {
       try {
+        const expiresAtNow = new Date().toISOString();
         const cacheResult = await pgPool.query(`
           SELECT analysis_data FROM ai_analysis_cache
-          WHERE user_id = ? AND month = ? AND expires_at > NOW()
-        `, [userId, currentMonth]);
+          WHERE user_id = ? AND month = ? AND expires_at > ?
+        `, [userId, currentMonth, expiresAtNow]);
 
         if (cacheResult.rows.length > 0) {
           console.log(`[AI Planning] Cache HIT for user ${userId} month ${currentMonth}`);

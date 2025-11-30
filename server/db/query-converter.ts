@@ -119,7 +119,9 @@ export function createQueryWrapper(pool: any) {
           original: sql,
           converted: converted.sql,
           params: converted.params,
-          error: err.message
+          error: err.message,
+          errorCode: err.code,
+          errorState: err.sqlState
         });
         throw err;
       }
@@ -133,4 +135,14 @@ export function createQueryWrapper(pool: any) {
       return this;
     }
   };
+}
+
+/**
+ * Helper para calcular data de fim do mês (compatível MySQL/SQLite)
+ */
+export function getMonthEndDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  date.setMonth(date.getMonth() + 1);
+  date.setDate(0);
+  return date.toISOString().split('T')[0];
 }

@@ -24,11 +24,12 @@ router.post('/subscribe', async (req: Request, res: Response) => {
     const id = `ps${Date.now()}`;
     const subscriptionJson = JSON.stringify(subscription);
     
+    const now = new Date().toISOString();
     await pgPool.query(`
-      INSERT INTO push_subscriptions (id, user_id, subscription, user_agent)
-      VALUES (?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE last_active = CURRENT_TIMESTAMP
-    `, [id, userId, subscriptionJson, req.headers['user-agent'] || '']);
+      INSERT INTO push_subscriptions (id, user_id, subscription, user_agent, last_active)
+      VALUES (?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE last_active = ?
+    `, [id, userId, subscriptionJson, req.headers['user-agent'] || '', now, now]);
 
     res.json({ message: 'Subscribed to push notifications' });
   } catch (error: any) {

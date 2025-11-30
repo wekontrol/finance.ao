@@ -314,12 +314,18 @@ router.get('/summary', async (req: Request, res: Response) => {
     limits = limitsResult.rows;
   }
 
+  // Calculate month end date in JavaScript to avoid MySQL-specific DATE_ADD
+  const monthStart = `${currentMonth}-01`;
+  const monthEnd = new Date(currentMonth + '-01');
+  monthEnd.setMonth(monthEnd.getMonth() + 1);
+  const monthEndStr = monthEnd.toISOString().split('T')[0];
+
   const transactionsResult = await pgPool.query(
     `SELECT category, SUM(amount) as total
      FROM transactions
-     WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < DATE_ADD(?, INTERVAL 1 MONTH)
+     WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < ?
      GROUP BY category`,
-    [userId, `${currentMonth}-01`, `${currentMonth}-01`]
+    [userId, monthStart, monthEndStr]
   );
   const transactions = transactionsResult.rows;
 
