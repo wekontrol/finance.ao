@@ -173,6 +173,25 @@ class SQLitePool {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
 
+      `CREATE TABLE IF NOT EXISTS api_configurations (
+        id VARCHAR(255) PRIMARY KEY,
+        provider VARCHAR(255),
+        api_key TEXT,
+        model VARCHAR(255),
+        is_default INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS budget_history (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+        category VARCHAR(255),
+        month VARCHAR(7),
+        limit_amount REAL,
+        spent_amount REAL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
       `CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date)`,
       `CREATE INDEX IF NOT EXISTS idx_budget_user_category ON budget_limits(user_id, category)`,
       `CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire)`,

@@ -130,6 +130,25 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Global error handler - prevent crashes
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('❌ Server error:', err.message || err);
+  
+  // Database errors - return gracefully
+  if (err.message?.includes('SQLITE_ERROR') || err.message?.includes('no such table')) {
+    return res.status(503).json({ 
+      error: 'Database temporarily unavailable',
+      details: 'Please try again'
+    });
+  }
+  
+  // All other errors
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'production' ? 'An error occurred' : err.message
+  });
+});
+
 // Production: serve static files from dist
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(process.cwd(), 'dist')));
