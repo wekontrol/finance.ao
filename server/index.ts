@@ -25,12 +25,10 @@ import aiPlanningRoutes from './routes/aiPlanning';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-initializeDatabase();
+initializeDatabase().catch(console.error);
 
-// Initialize PostgreSQL sessions table in production
-if (process.env.NODE_ENV === 'production') {
-  initializeSessionsTable().catch(console.error);
-}
+// Initialize PostgreSQL sessions table
+initializeSessionsTable().catch(console.error);
 
 // CORS configuration - must be before session middleware
 app.use(cors({
@@ -49,19 +47,13 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const sessionSecret = process.env.SESSION_SECRET || 'gestor-financeiro-secret-key-2024';
 
-// Session store configuration
-let sessionStore: any;
-
-if (process.env.NODE_ENV === 'production') {
-  // Always use PostgreSQL in production for persistent sessions
-  const PgStore = ConnectPgSimple(session);
-  sessionStore = new PgStore({
-    pool: pgPool,
-    tableName: 'session',
-    createTableIfMissing: true,
-  });
-}
-// In development, use memory store (that's OK for local dev)
+// Session store configuration - always use PostgreSQL
+const PgStore = ConnectPgSimple(session);
+const sessionStore = new PgStore({
+  pool: pgPool,
+  tableName: 'session',
+  createTableIfMissing: true,
+});
 
 // Session middleware - must be before route handlers
 app.use(session({
