@@ -30,39 +30,34 @@ if ! id "$APP_USER" &>/dev/null; then
 fi
 
 sudo mkdir -p $APP_DIR
-sudo chown -R root:root $APP_DIR
-sudo chmod 755 $APP_DIR
-
-echo ">>> [5/7] Clonando/Copiando código e instalando dependências..."
+sudo rm -rf $APP_DIR/*
 sudo cp -r . $APP_DIR/
 cd $APP_DIR
+sudo chmod +x init-db.sh deploy.sh
 
-sudo chown -R $APP_USER:$APP_USER $APP_DIR
-sudo chmod -R u+rwX $APP_DIR
+echo ">>> [5/7] Instalando dependências npm..."
+sudo -u $APP_USER sh -c 'rm -rf node_modules dist package-lock.json' || true
 
-# Copiar init-db.sh também
-sudo cp init-db.sh $APP_DIR/
-sudo chmod +x $APP_DIR/init-db.sh
+if ! sudo -u $APP_USER npm install 2>&1 | tail -5; then
+    echo "ERRO: npm install falhou!"
+    exit 1
+fi
 
-sudo -u $APP_USER sh -c 'rm -rf node_modules && rm -rf dist && rm -f package-lock.json'
-sudo -u $APP_USER npm install
-sudo -u $APP_USER npm run build
+echo "Compilando frontend..."
+sudo -u $APP_USER npm run build 2>&1 | tail -5 || true
 
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
 sudo chmod -R 755 $APP_DIR
 
-echo ">>> [6/7] Configurando PostgreSQL e serviço systemd..."
-
+echo ">>> [6/7] Configurando PostgreSQL..."
 if ! command -v psql &> /dev/null; then
     echo "Instalando PostgreSQL..."
     sudo apt-get install -y postgresql postgresql-contrib
 fi
 
-echo "Iniciando PostgreSQL..."
 sudo systemctl start postgresql || true
 sudo systemctl enable postgresql || true
-
-echo "Configurando base de dados PostgreSQL..."
+sleep 2
 
 DB_NAME="gestor_financeiro"
 DB_USER="gestor_user"
@@ -71,6 +66,7 @@ DB_HOST="localhost"
 DB_PORT="5432"
 
 sudo -u postgres psql <<EOF || true
+DROP USER IF EXISTS $DB_USER CASCADE;
 CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
 ALTER USER $DB_USER CREATEDB;
 DROP DATABASE IF EXISTS $DB_NAME;
@@ -81,28 +77,8 @@ EOF
 
 POSTGRES_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-CREDS_FILE="$APP_DIR/.postgres-credentials.txt"
-sudo tee $CREDS_FILE > /dev/null <<EOF
-═══════════════════════════════════════════════════════════
-CREDENCIAIS DO POSTGRESQL - GUARDAR COM SEGURANÇA
-═══════════════════════════════════════════════════════════
-Utilizador: $DB_USER
-Senha: $DB_PASSWORD
-Base de dados: $DB_NAME
-Host: $DB_HOST
-Porta: $DB_PORT
-
-String de conexão:
-$POSTGRES_URL
-═══════════════════════════════════════════════════════════
-EOF
-
-sudo chmod 600 $CREDS_FILE
-sudo chown $APP_USER:$APP_USER $CREDS_FILE
-
 SESSION_SECRET="$(head -c 100 /dev/urandom | LC_ALL=C tr -cd 'A-Za-z0-9' | head -c 32)"
 
-# IMPORTANTE: Criar .env.production AQUI ANTES DO SYSTEMD
 ENV_FILE="$APP_DIR/.env.production"
 sudo tee $ENV_FILE > /dev/null <<ENVEOF
 NODE_ENV=production
@@ -116,21 +92,18 @@ sudo chown $APP_USER:$APP_USER $ENV_FILE
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "✓ PostgreSQL configurado automaticamente!"
+echo "✓ PostgreSQL configurado!"
+echo "Utilizador: $DB_USER"
+echo "Base de dados: $DB_NAME"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
-echo "CREDENCIAIS GERADAS:"
-echo "  Utilizador: $DB_USER"
-echo "  Senha: $DB_PASSWORD"
-echo "  String de conexão: $POSTGRES_URL"
-echo ""
 
-# Configurar systemd com .env carregado
+echo ">>> [7/7] Criando serviço systemd..."
 sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<'SYSTEMDEOF'
 [Unit]
 Description=Gestor Financeiro Familiar - Node.js Application
 After=network.target postgresql.service
-Wants=network-online.target postgresql.service
+Wants=postgresql.service
 
 [Service]
 Type=simple
@@ -138,11 +111,12 @@ User=nodeapp
 WorkingDirectory=/var/www/gestor-financeiro
 EnvironmentFile=/var/www/gestor-financeiro/.env.production
 ExecStartPre=/bin/bash /var/www/gestor-financeiro/init-db.sh /var/www/gestor-financeiro
-ExecStart=/usr/bin/npm start
+ExecStart=/bin/bash -c 'cd /var/www/gestor-financeiro && npm start'
 Restart=always
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
+SyslogIdentifier=gestor-financeiro
 LimitNOFILE=65535
 LimitNPROC=65535
 
@@ -152,27 +126,20 @@ SYSTEMDEOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable gestor-financeiro
-
-echo ">>> [7/7] Iniciando serviço..."
 sudo systemctl start gestor-financeiro
 
 sleep 3
 if sudo systemctl is-active --quiet gestor-financeiro; then
     echo ""
-    echo "✓ SUCESSO! Serviço iniciado com sucesso!"
-    echo "✓ Acesse a aplicação em: http://$(hostname -I | awk '{print $1}'):5000"
+    echo "✓ SUCESSO! Aplicação está rodando!"
+    echo "✓ URL: http://$(hostname -I | awk '{print $1}'):5000"
+    echo "✓ Credenciais: admin / admin"
     echo ""
-    echo "Credenciais padrão:"
-    echo "  Usuário: admin"
-    echo "  Senha: admin"
-    echo ""
-    echo "Comandos úteis:"
+    echo "Comandos:"
     echo "  Ver logs: sudo journalctl -u gestor-financeiro -f"
-    echo "  Restart: sudo systemctl restart gestor-financeiro"
     echo "  Status: sudo systemctl status gestor-financeiro"
 else
     echo "✗ ERRO ao iniciar o serviço!"
-    echo "Verificando logs..."
-    sudo journalctl -u gestor-financeiro -n 50
+    sudo journalctl -u gestor-financeiro -n 30
     exit 1
 fi
