@@ -1,0 +1,136 @@
+root@hermantest:/home/herman# ls
+finance.ao
+root@hermantest:/home/herman# rm -r finance.ao
+root@hermantest:/home/herman# git clone https://github.com/wekontrol/finance.ao
+cd finance.ao
+sudo bash deploy.sh
+Cloning into 'finance.ao'...
+remote: Enumerating objects: 655, done.
+remote: Total 655 (delta 0), reused 0 (delta 0), pack-reused 655 (from 1)
+Receiving objects: 100% (655/655), 1.90 MiB | 1.46 MiB/s, done.
+Resolving deltas: 100% (435/435), done.
+>>> [1/7] Atualizando sistema...
+Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:2 http://ao.archive.ubuntu.com/ubuntu noble InRelease
+Hit:3 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:4 http://ao.archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:5 http://ao.archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists... Done
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+curl is already the newest version (8.5.0-2ubuntu10.6).
+git is already the newest version (1:2.43.0-1ubuntu7.3).
+build-essential is already the newest version (12.10ubuntu1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+>>> [2/7] Configurando Git globalmente...
+>>> [3/7] Verificando Node.js...
+Node.js já instalado: v20.19.6
+>>> [4/7] Preparando diretório da aplicação...
+Copiando arquivos para /var/www/gestor-financeiro...
+>>> [5/7] Instalando dependências npm...
+Limpando node_modules antigos...
+✓ Limpeza concluída
+Instalando apenas dependências de PRODUÇÃO (sem Vite)...
+
+57 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+>>> [6/7] Configurando MySQL...
+Synchronizing state of mysql.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable mysql
+
+═══════════════════════════════════════════════════════════
+✓ MySQL configurado!
+Utilizador: gestor_user
+Base de dados: gestor_financeiro
+═══════════════════════════════════════════════════════════
+
+>>> [7/7] Finalizando configuração...
+Criando serviço systemd...
+
+✓ SUCESSO! Aplicação está rodando!
+✓ URL: http://192.168.5.49:5000
+✓ Credenciais: admin / admin
+
+Comandos:
+  Ver logs: sudo journalctl -u gestor-financeiro -f
+  Status: sudo systemctl status gestor-financeiro
+root@hermantest:/home/herman/finance.ao# sudo systemctl status gestor-financeiro
+sudo journalctl -u gestor-financeiro -f -n 50
+● gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application
+     Loaded: loaded (/etc/systemd/system/gestor-financeiro.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2025-11-30 19:54:55 UTC; 42s ago
+    Process: 46499 ExecStartPre=/bin/bash /var/www/gestor-financeiro/init-db.sh /var/www/gestor-financeiro (code=exited, status=0/SUCCESS)
+   Main PID: 46501 (npm start)
+      Tasks: 35 (limit: 2267)
+     Memory: 61.8M (peak: 94.6M)
+        CPU: 1.569s
+     CGroup: /system.slice/gestor-financeiro.service
+             ├─46501 "npm start"
+             ├─46513 sh -c "bash init-db.sh . && NODE_ENV=production tsx server/index.ts"
+             ├─46516 node /var/www/gestor-financeiro/node_modules/.bin/tsx server/index.ts
+             └─46527 /usr/bin/node --require /var/www/gestor-financeiro/node_modules/tsx/dist/preflight.cjs --import file:///var/www/gestor-financeiro/node>
+
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at Object.query (/var/www/gestor-financeiro/server/db/query-converter.ts:110:35)
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at Timeout._onTimeout (/var/www/gestor-financeiro/server/routes/budget.ts:166:40)
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at listOnTimeout (node:internal/timers:581:17)
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at process.processTimers (node:internal/timers:519:7) {
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   code: 'ER_NO_SUCH_TABLE',
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   errno: 1146,
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   sql: 'SELECT DISTINCT user_id FROM budget_limits',
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   sqlState: '42S02',
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   sqlMessage: "Table 'gestor_financeiro.budget_limits' doesn't exist"
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]: }
+
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Table creation warning: BLOB/TEXT column 'id' used in key specification without a key length
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Table creation warning: Invalid default value for 'created_at'
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Table creation warning: Invalid default value for 'created_at'
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Table creation warning: Invalid default value for 'created_at'
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Table creation warning: Invalid default value for 'created_at'
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Table creation warning: Invalid default value for 'created_at'
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Table creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'NOT NULL,
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]:         value TEXT NOT NULL,
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]:         created_by TEXT NOT NULL,
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]:        ' at line 4
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_users_family_id ON users(family_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_users_created_by ON users(created_by)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_users_username ON users(username)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_transactions_date ON transactions(date)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_transactions_category ON transactions(category)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_budget_limits_user_id ON budget_limits(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_budget_limits_user_category ON budget_limits(user_id, category' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_budget_history_user_id ON budget_history(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_goals_user_id ON savings_goals(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_goal_transactions_goal_id ON goal_transactions(goal_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_goal_transactions_user_id ON goal_transactions(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_family_tasks_family_id ON family_tasks(family_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_family_events_family_id ON family_events(family_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_forecast_history_user_id ON forecast_history(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_waste_analysis_user_id ON waste_analysis_history(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_saved_simulations_user_id ON saved_simulations(user_id)' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_transaction_attachments_transaction_id ON transaction_attachme' at line 1
+Nov 30 19:54:58 hermantest gestor-financeiro[46527]: ⚠️ Index creation warning: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS idx_translations_language_key ON translations(language, key)' at line 1
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]: Database query error: {
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   original: 'SELECT DISTINCT user_id FROM budget_limits',
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   converted: 'SELECT DISTINCT user_id FROM budget_limits',
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   params: [],
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   error: "Table 'gestor_financeiro.budget_limits' doesn't exist"
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]: }
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]: [Budget Scheduler] Initial run error: Error: Table 'gestor_financeiro.budget_limits' doesn't exist
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at PromisePool.query (/var/www/gestor-financeiro/node_modules/mysql2/lib/promise/pool.js:36:22)
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at Object.query (/var/www/gestor-financeiro/server/db/query-converter.ts:110:35)
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at Timeout._onTimeout (/var/www/gestor-financeiro/server/routes/budget.ts:166:40)
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at listOnTimeout (node:internal/timers:581:17)
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:     at process.processTimers (node:internal/timers:519:7) {
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   code: 'ER_NO_SUCH_TABLE',
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   errno: 1146,
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   sql: 'SELECT DISTINCT user_id FROM budget_limits',
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   sqlState: '42S02',
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]:   sqlMessage: "Table 'gestor_financeiro.budget_limits' doesn't exist"
+Nov 30 19:55:03 hermantest gestor-financeiro[46527]: }
