@@ -136,7 +136,7 @@ echo ""
 echo "⚠️  As credenciais foram salvas em: .postgres-credentials.txt"
 echo ""
 
-POSTGRES_ENV="Environment=\"TheFinance=$POSTGRES_URL\""
+POSTGRES_ENV="Environment=\"DATABASE_URL=$POSTGRES_URL\""
 
 # Cria arquivo de serviço systemd
 sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<EOF
