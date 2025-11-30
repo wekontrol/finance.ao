@@ -96,7 +96,7 @@ export async function autoSaveMonthlyHistory(userId: string) {
       const transactionsResult = await pgPool.query(
         `SELECT category, SUM(amount) as total
          FROM transactions
-         WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < datetime(?, '+1 month')
+         WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < DATE_ADD(?, INTERVAL 1 MONTH)
          GROUP BY category`,
         [userId, `${previousMonth}-01`, `${previousMonth}-01`]
       );
@@ -317,7 +317,7 @@ router.get('/summary', async (req: Request, res: Response) => {
   const transactionsResult = await pgPool.query(
     `SELECT category, SUM(amount) as total
      FROM transactions
-     WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < datetime(?, '+1 month')
+     WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < DATE_ADD(?, INTERVAL 1 MONTH)
      GROUP BY category`,
     [userId, `${currentMonth}-01`, `${currentMonth}-01`]
   );
@@ -387,7 +387,7 @@ router.post('/history/save', async (req: Request, res: Response) => {
     const transactionsResult = await pgPool.query(
       `SELECT category, SUM(amount) as total
        FROM transactions
-       WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < datetime(?, '+1 month')
+       WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < DATE_ADD(?, INTERVAL 1 MONTH)
        GROUP BY category`,
       [userId, `${currentMonth}-01`, `${currentMonth}-01`]
     );
@@ -403,8 +403,8 @@ router.post('/history/save', async (req: Request, res: Response) => {
         `INSERT INTO budget_history (id, user_id, category, month, limit_amount, spent_amount)
          VALUES (?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
-           limit_amount = VALUES(limit_amount,
-           spent_amount = VALUES(spent_amount`,
+           limit_amount = VALUES(limit_amount),
+           spent_amount = VALUES(spent_amount)`,
         [id, userId, categoryKey, currentMonth, limit.limit_amount, spent ? parseFloat(spent.total) : 0]
       );
       
