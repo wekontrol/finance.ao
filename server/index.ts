@@ -25,10 +25,15 @@ import aiPlanningRoutes from './routes/aiPlanning';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-initializeDatabase().catch(console.error);
-
-// Initialize PostgreSQL sessions table
-initializeSessionsTable().catch(console.error);
+// Initialize database before anything else
+(async () => {
+  try {
+    await initializeDatabase();
+    await initializeSessionsTable();
+  } catch (error) {
+    console.error('Database initialization failed:', error);
+  }
+})();
 
 // CORS configuration - must be before session middleware
 app.use(cors({

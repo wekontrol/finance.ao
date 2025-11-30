@@ -177,7 +177,7 @@ export async function startMonthlyHistoryScheduler() {
     } catch (error) {
       console.error('[Budget Scheduler] Initial run error:', error);
     }
-  }, 1000);
+  }, 5000);
 
   console.log('📅 [Budget Scheduler] Started - auto-saves history every 30 minutes');
   
