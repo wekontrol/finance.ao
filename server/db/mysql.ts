@@ -19,6 +19,7 @@ if (isProd) {
     queueLimit: 0,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
+    multipleStatements: true,  // Allow multiple SQL statements in one query
   });
   console.log('✅ Using MySQL connection pool (production)');
 } else {

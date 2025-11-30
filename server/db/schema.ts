@@ -290,19 +290,19 @@ export async function initializeDatabase() {
 
     // Check if admin exists (skip in development with in-memory DB)
     if (process.env.NODE_ENV === 'production') {
-      const adminResult = await pool.query('SELECT id FROM users WHERE username = $1', ['admin']);
+      const [adminResult] = await pool.query('SELECT id FROM users WHERE username = ?', ['admin']);
       
-      if (adminResult.rows.length === 0) {
+      if ((adminResult as any).length === 0) {
         // First create the admin family
         await pool.query(
-          `INSERT INTO families (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+          `INSERT INTO families (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE id=id`,
           ['fam_admin', 'Admin Family']
         );
         
         const hashedPassword = bcrypt.hashSync('admin', 10);
         await pool.query(
           `INSERT INTO users (id, username, password, name, role, avatar, status, family_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           ['u0', 'admin', hashedPassword, 'Super Admin', 'SUPER_ADMIN', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Super', 'APPROVED', 'fam_admin']
         );
         console.log('✅ Admin user created');
@@ -311,9 +311,8 @@ export async function initializeDatabase() {
 
     // Add status column to translations if it doesn't exist (migration for old DBs)
     try {
-      const tableInfo = await pool.query("PRAGMA table_info(translations)");
-      const hasStatusColumn = tableInfo.rows?.some((col: any) => col.name === 'status') || 
-                             (Array.isArray(tableInfo) && tableInfo.some((col: any) => col.name === 'status'));
+      const [tableInfo] = await pool.query("PRAGMA table_info(translations)");
+      const hasStatusColumn = (Array.isArray(tableInfo) && tableInfo.some((col: any) => col.name === 'status'));
       
       if (!hasStatusColumn) {
         await pool.query('ALTER TABLE translations ADD COLUMN status TEXT DEFAULT "active"');
@@ -324,8 +323,8 @@ export async function initializeDatabase() {
     }
 
     // Load translations from JSON files
-    const translationsResult = await pool.query('SELECT COUNT(*) as count FROM translations');
-    if (parseInt(translationsResult.rows[0]?.count || '0') === 0) {
+    const [translationsResult] = await pool.query('SELECT COUNT(*) as count FROM translations');
+    if (parseInt((translationsResult as any)[0]?.count || '0') === 0) {
       const localesDir = path.join(process.cwd(), 'public', 'locales');
       
       try {
@@ -345,8 +344,8 @@ export async function initializeDatabase() {
               try {
                 await pool.query(
                   `INSERT INTO translations (id, language, key, value, created_by, status)
-                   VALUES ($1, $2, $3, $4, $5, 'active')
-                   ON CONFLICT DO NOTHING`,
+                   VALUES (?, ?, ?, ?, ?, 'active')
+                   ON DUPLICATE KEY UPDATE id=id`,
                   [id, lang, key, String(value), 'u0']
                 );
               } catch (e) {
