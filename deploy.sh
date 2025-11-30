@@ -62,7 +62,7 @@ echo "Configurando base de dados PostgreSQL..."
 
 DB_NAME="gestor_financeiro"
 DB_USER="gestor_user"
-DB_PASSWORD="P$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 15)"
+DB_PASSWORD="$(head -c 100 /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 16)"
 DB_HOST="localhost"
 DB_PORT="5432"
 
@@ -107,7 +107,7 @@ echo "  Senha: $DB_PASSWORD"
 echo "  String de conexão: $POSTGRES_URL"
 echo ""
 
-SESSION_SECRET="S$(openssl rand -base64 32 | tr -dc 'A-Za-z0-9' | head -c 31)"
+SESSION_SECRET="$(head -c 100 /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 32)"
 
 ENV_FILE="$APP_DIR/.env.production"
 sudo tee $ENV_FILE > /dev/null <<ENVEOF
