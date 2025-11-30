@@ -27,6 +27,7 @@ export async function initializeDatabase() {
       waitForConnections: true,
       connectionLimit: 1,
       queueLimit: 0,
+      multipleStatements: true,
     });
 
     // Get connection
