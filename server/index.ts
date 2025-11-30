@@ -29,7 +29,7 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
 // Determine environment
 const isProd = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL;
 if (isProd) {
-  console.log('✅ Production mode: Using PostgreSQL');
+  console.log('✅ Production mode: Using MySQL');
 } else {
   console.log('🗄️  Development mode: Using SQLite');
 }
@@ -76,7 +76,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const sessionSecret = process.env.SESSION_SECRET || 'gestor-financeiro-secret-key-2024';
 
-// Session store - memory only (development) or PostgreSQL (production)
+// Session store - memory only (development) or MySQL (production)
 let sessionStore: any;
 const MemoryStore = session.MemoryStore;
 sessionStore = new MemoryStore();
@@ -86,7 +86,7 @@ console.log('✅ Using memory session store (development mode)');
 app.use(session({
   store: sessionStore,
   secret: sessionSecret,
-  resave: true, // CRITICAL: Set to true for PostgreSQL store
+  resave: true, // CRITICAL: Set to true for MySQL store
   saveUninitialized: true, // CRITICAL: Set to true to ensure session is stored
   cookie: {
     secure: process.env.NODE_ENV === 'production' ? false : false, // Disable secure in production for testing
@@ -162,7 +162,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   if (process.env.NODE_ENV === 'production') {
     console.log('Running in production mode');
-    console.log('✅ Sessions stored in PostgreSQL (persistent)');
+    console.log('✅ Sessions stored in MySQL (persistent)');
   } else {
     console.log('Running in development mode');
   }
