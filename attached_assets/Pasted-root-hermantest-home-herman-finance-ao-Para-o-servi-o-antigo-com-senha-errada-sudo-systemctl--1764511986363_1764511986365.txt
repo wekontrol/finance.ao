@@ -1,0 +1,450 @@
+root@hermantest:/home/herman/finance.ao# # Para o serviço antigo (com senha errada)
+sudo systemctl stop gestor-financeiro
+# Limpa a base de dados antiga
+sudo -u postgres psql <<EOF
+DROP DATABASE IF EXISTS gestor_financeiro;
+DROP USER IF EXISTS gestor_user;
+EOF
+# Executa deploy.sh novamente (gerará nova senha sem caracteres especiais)
+sudo bash deploy.sh
+# Testa
+sudo bash diagnose.sh
+DROP DATABASE
+DROP ROLE
+>>> [1/7] Atualizando sistema...
+Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:2 http://ao.archive.ubuntu.com/ubuntu noble InRelease
+Hit:3 http://ao.archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:4 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:5 http://ao.archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists... Done
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+curl is already the newest version (8.5.0-2ubuntu10.6).
+git is already the newest version (1:2.43.0-1ubuntu7.3).
+build-essential is already the newest version (12.10ubuntu1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+>>> [2/7] Configurando Git globalmente...
+>>> [3/7] Verificando Node.js...
+Node.js já instalado: v20.19.6
+>>> [4/7] Preparando diretório da aplicação...
+>>> [5/7] Clonando/Copiando código e instalando dependências...
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated fstream@1.0.12: This package is no longer supported.
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+
+added 716 packages, and audited 717 packages in 4m
+
+105 packages are looking for funding
+  run `npm fund` for details
+
+5 vulnerabilities (3 moderate, 2 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> gestor-financeiro-familiar@1.0.3 build
+> vite build
+
+NODE_ENV=production is not supported in the .env file. Only NODE_ENV=development is supported to create a development build of your project. If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.
+vite v5.4.21 building for production...
+✓ 2696 modules transformed.
+Generated an empty chunk: "auth".
+dist/index.html                            7.23 kB │ gzip:   2.45 kB
+dist/assets/index-BccavMXV.css            95.58 kB │ gzip:  13.86 kB
+dist/assets/auth-l0sNRNKZ.js               0.00 kB │ gzip:   0.02 kB
+dist/assets/purify.es-C_uT9hQ1.js         21.98 kB │ gzip:   8.74 kB
+dist/assets/ui-icons-BmRcAUOu.js          36.05 kB │ gzip:   6.72 kB
+dist/assets/react-vendor-AIrFsuJV.js     141.46 kB │ gzip:  45.43 kB
+dist/assets/index.es-CrDVOCaO.js         150.48 kB │ gzip:  51.44 kB
+dist/assets/html2canvas.esm-CBrSDip1.js  201.42 kB │ gzip:  48.03 kB
+dist/assets/pdf-D1kK-7Cp.js              398.49 kB │ gzip: 131.01 kB
+dist/assets/charts-DAehIZ_w.js           433.39 kB │ gzip: 114.73 kB
+dist/assets/index-Cnd6yIsW.js            723.88 kB │ gzip: 166.05 kB
+✓ built in 9.65s
+>>> [6/7] Configurando PostgreSQL e serviço systemd...
+Iniciando PostgreSQL...
+Synchronizing state of postgresql.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable postgresql
+Configurando base de dados PostgreSQL...
+CREATE ROLE
+ALTER ROLE
+NOTICE:  database "gestor_financeiro" does not exist, skipping
+DROP DATABASE
+CREATE DATABASE
+ALTER DATABASE
+GRANT
+
+═══════════════════════════════════════════════════════════
+✓ PostgreSQL configurado automaticamente!
+═══════════════════════════════════════════════════════════
+
+CREDENCIAIS GERADAS:
+  Utilizador: gestor_user
+  Senha: IC28se3JdfF8/tz1qTW9ng==
+  String de conexão: postgresql://gestor_user:IC28se3JdfF8/tz1qTW9ng==@localhost:5432/gestor_financeiro
+
+>>> [7/7] Iniciando serviço...
+
+✓ SUCESSO! Serviço iniciado com sucesso!
+✓ Acesse a aplicação em: http://192.168.5.49:5000
+
+Credenciais padrão:
+  Usuário: admin
+  Senha: admin
+
+Comandos úteis:
+  Ver logs: sudo journalctl -u gestor-financeiro -f
+  Restart: sudo systemctl restart gestor-financeiro
+  Status: sudo systemctl status gestor-financeiro
+🔍 DIAGNÓSTICO DO GESTOR FINANCEIRO
+═════════════════════════════════════════════
+
+1️⃣  Status do Serviço:
+     Active: active (running) since Sun 2025-11-30 13:56:24 UTC; 3s ago
+
+2️⃣  Variáveis de Ambiente:
+  ✓ Arquivo .env.production existe
+  DATABASE_URL está configurado:
+DATABASE_URL=postgresql://gestor_user:IC28se3JdfF8/tz1qTW9ng==@localhost:5432/gestor_financeiro
+
+3️⃣  PostgreSQL:
+  ✓ PostgreSQL instalado
+     Active: active (exited) since Sun 2025-11-30 13:33:21 UTC; 23min ago
+
+4️⃣  Aplicação Node.js:
+  ✓ Node.js: v20.19.6
+  ✓ NPM: 10.8.2
+
+5️⃣  Teste de Conexão com Banco de Dados:
+  ✗ Falha ao conectar ao banco de dados
+  Verifique se PostgreSQL está rodando e as credenciais estão corretas
+
+6️⃣  Últimos Erros (últimos 10 linhas):
+Nov 30 13:56:26 hermantest npm[2631]: [Budget Scheduler] Initial run error: TypeError: Cannot read properties of undefined (reading 'searchParams')
+Nov 30 13:56:26 hermantest npm[2631]:     at parse (/var/www/gestor-financeiro/node_modules/pg-connection-string/index.js:39:30)
+Nov 30 13:56:26 hermantest npm[2631]:     at new ConnectionParameters (/var/www/gestor-financeiro/node_modules/pg/lib/connection-parameters.js:56:42)
+Nov 30 13:56:26 hermantest npm[2631]:     at new Client (/var/www/gestor-financeiro/node_modules/pg/lib/client.js:18:33)
+Nov 30 13:56:26 hermantest npm[2631]:     at BoundPool.newClient (/var/www/gestor-financeiro/node_modules/pg-pool/index.js:233:20)
+Nov 30 13:56:26 hermantest npm[2631]:     at BoundPool.connect (/var/www/gestor-financeiro/node_modules/pg-pool/index.js:227:10)
+Nov 30 13:56:26 hermantest npm[2631]:     at BoundPool.query (/var/www/gestor-financeiro/node_modules/pg-pool/index.js:411:10)
+Nov 30 13:56:26 hermantest npm[2631]:     at Timeout._onTimeout (/var/www/gestor-financeiro/server/routes/budget.ts:166:40)
+Nov 30 13:56:26 hermantest npm[2631]:     at listOnTimeout (node:internal/timers:581:17)
+Nov 30 13:56:26 hermantest npm[2631]:     at process.processTimers (node:internal/timers:519:7)
+
+═════════════════════════════════════════════
+Se tiver problemas, execute:
+  sudo journalctl -u gestor-financeiro -f
+para ver os logs em tempo real
+root@hermantest:/home/herman/finance.ao# # Para o serviço anterior
+sudo systemctl stop gestor-financeiro
+# Limpa base de dados
+sudo -u postgres psql <<EOF
+DROP DATABASE IF EXISTS gestor_financeiro;
+DROP USER IF EXISTS gestor_user;
+EOF
+# Copiar o novo deploy.sh (ou atualizar via git)
+# Opção 1: Copiar manualmente
+# Opção 2: Se fizeres git pull, já terá a versão corrigida
+# Executa deploy.sh novamente
+sudo bash deploy.sh
+# Testa
+sudo bash diagnose.sh
+DROP DATABASE
+DROP ROLE
+>>> [1/7] Atualizando sistema...
+Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:2 http://ao.archive.ubuntu.com/ubuntu noble InRelease
+Hit:3 http://ao.archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:4 http://ao.archive.ubuntu.com/ubuntu noble-backports InRelease
+Hit:5 https://deb.nodesource.com/node_20.x nodistro InRelease
+Reading package lists... Done
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+curl is already the newest version (8.5.0-2ubuntu10.6).
+git is already the newest version (1:2.43.0-1ubuntu7.3).
+build-essential is already the newest version (12.10ubuntu1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+>>> [2/7] Configurando Git globalmente...
+>>> [3/7] Verificando Node.js...
+Node.js já instalado: v20.19.6
+>>> [4/7] Preparando diretório da aplicação...
+>>> [5/7] Clonando/Copiando código e instalando dependências...
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated fstream@1.0.12: This package is no longer supported.
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+
+added 716 packages, and audited 717 packages in 4m
+
+105 packages are looking for funding
+  run `npm fund` for details
+
+5 vulnerabilities (3 moderate, 2 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> gestor-financeiro-familiar@1.0.3 build
+> vite build
+
+NODE_ENV=production is not supported in the .env file. Only NODE_ENV=development is supported to create a development build of your project. If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.
+vite v5.4.21 building for production...
+✓ 2696 modules transformed.
+Generated an empty chunk: "auth".
+dist/index.html                            7.23 kB │ gzip:   2.45 kB
+dist/assets/index-BccavMXV.css            95.58 kB │ gzip:  13.86 kB
+dist/assets/auth-l0sNRNKZ.js               0.00 kB │ gzip:   0.02 kB
+dist/assets/purify.es-C_uT9hQ1.js         21.98 kB │ gzip:   8.74 kB
+dist/assets/ui-icons-BmRcAUOu.js          36.05 kB │ gzip:   6.72 kB
+dist/assets/react-vendor-AIrFsuJV.js     141.46 kB │ gzip:  45.43 kB
+dist/assets/index.es-CrDVOCaO.js         150.48 kB │ gzip:  51.44 kB
+dist/assets/html2canvas.esm-CBrSDip1.js  201.42 kB │ gzip:  48.03 kB
+dist/assets/pdf-D1kK-7Cp.js              398.49 kB │ gzip: 131.01 kB
+dist/assets/charts-DAehIZ_w.js           433.39 kB │ gzip: 114.73 kB
+dist/assets/index-Cnd6yIsW.js            723.88 kB │ gzip: 166.05 kB
+✓ built in 9.44s
+>>> [6/7] Configurando PostgreSQL e serviço systemd...
+Iniciando PostgreSQL...
+Synchronizing state of postgresql.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable postgresql
+Configurando base de dados PostgreSQL...
+CREATE ROLE
+ALTER ROLE
+NOTICE:  database "gestor_financeiro" does not exist, skipping
+DROP DATABASE
+CREATE DATABASE
+ALTER DATABASE
+GRANT
+
+═══════════════════════════════════════════════════════════
+✓ PostgreSQL configurado automaticamente!
+═══════════════════════════════════════════════════════════
+
+CREDENCIAIS GERADAS:
+  Utilizador: gestor_user
+  Senha: 4WDVPlU6h6cpzZ1HgYfG5g==
+  String de conexão: postgresql://gestor_user:4WDVPlU6h6cpzZ1HgYfG5g==@localhost:5432/gestor_financeiro
+
+>>> [7/7] Iniciando serviço...
+
+✓ SUCESSO! Serviço iniciado com sucesso!
+✓ Acesse a aplicação em: http://192.168.5.49:5000
+
+Credenciais padrão:
+  Usuário: admin
+  Senha: admin
+
+Comandos úteis:
+  Ver logs: sudo journalctl -u gestor-financeiro -f
+  Restart: sudo systemctl restart gestor-financeiro
+  Status: sudo systemctl status gestor-financeiro
+🔍 DIAGNÓSTICO DO GESTOR FINANCEIRO
+═════════════════════════════════════════════
+
+1️⃣  Status do Serviço:
+     Active: active (running) since Sun 2025-11-30 14:03:44 UTC; 3s ago
+
+2️⃣  Variáveis de Ambiente:
+  ✓ Arquivo .env.production existe
+  DATABASE_URL está configurado:
+DATABASE_URL=postgresql://gestor_user:4WDVPlU6h6cpzZ1HgYfG5g==@localhost:5432/gestor_financeiro
+
+3️⃣  PostgreSQL:
+  ✓ PostgreSQL instalado
+     Active: active (exited) since Sun 2025-11-30 13:33:21 UTC; 30min ago
+
+4️⃣  Aplicação Node.js:
+  ✓ Node.js: v20.19.6
+  ✓ NPM: 10.8.2
+
+5️⃣  Teste de Conexão com Banco de Dados:
+  ✗ Falha ao conectar ao banco de dados
+  Verifique se PostgreSQL está rodando e as credenciais estão corretas
+
+6️⃣  Últimos Erros (últimos 10 linhas):
+Nov 30 14:03:46 hermantest npm[3450]:   where: undefined,
+Nov 30 14:03:46 hermantest npm[3450]:   schema: undefined,
+Nov 30 14:03:46 hermantest npm[3450]:   table: undefined,
+Nov 30 14:03:46 hermantest npm[3450]:   column: undefined,
+Nov 30 14:03:46 hermantest npm[3450]:   dataType: undefined,
+Nov 30 14:03:46 hermantest npm[3450]:   constraint: undefined,
+Nov 30 14:03:46 hermantest npm[3450]:   file: 'parse_relation.c',
+Nov 30 14:03:46 hermantest npm[3450]:   line: '1449',
+Nov 30 14:03:46 hermantest npm[3450]:   routine: 'parserOpenTable'
+Nov 30 14:03:46 hermantest npm[3450]: }
+
+═════════════════════════════════════════════
+Se tiver problemas, execute:
+  sudo journalctl -u gestor-financeiro -f
+para ver os logs em tempo real
+root@hermantest:/home/herman/finance.ao# cd /home/herman/finance.ao
+
+# 1. Para o serviço
+sudo systemctl stop gestor-financeiro
+
+# 2. Limpa BD antiga
+sudo -u postgres psql <<EOF
+DROP DATABASE IF EXISTS gestor_financeiro;
+DROP USER IF EXISTS gestor_user;
+EOF
+
+# 3. Copia o NOVO deploy.sh (do Replit) para o Ubuntu
+# Opção: Se tiveres acesso, copia manualmente o novo ficheiro
+# Ou usa este comando para gerar novo:
+cat > /tmp/deploy-novo.sh << 'EOFNEW'
+#!/bin/bash
+set -e
+export DEBIAN_FRONTEND=noninteractive
+
+echo ">>> [1/7] Atualizando sistema..."
+sudo apt-get update
+sudo apt-get install -y curl git build-essential
+
+echo ">>> [2/7] Configurando Git globalmente..."
+git config --global --add safe.directory /var/www/gestor-financeiro
+git config --global user.name "Deploy Script"
+git config --global user.email "deploy@gestor-financeiro.local"
+
+echo ">>> [3/7] Verificando Node.js..."
+if ! command -v node &> /dev/null; then
+sudo bash diagnose.shhho.sh deploy.shiro -n 50stname -I | awk '{print $1}'):5000"AME}"'
+DROP DATABASE
+DROP ROLE
+>>> [1/7] Atualizando sistema...
+Hit:1 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:2 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:3 http://ao.archive.ubuntu.com/ubuntu noble InRelease
+Hit:4 http://ao.archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:5 http://ao.archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists... Done
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+curl is already the newest version (8.5.0-2ubuntu10.6).
+git is already the newest version (1:2.43.0-1ubuntu7.3).
+build-essential is already the newest version (12.10ubuntu1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+>>> [2/7] Configurando Git globalmente...
+>>> [3/7] Verificando Node.js...
+Node.js já instalado: v20.19.6
+>>> [4/7] Preparando diretório da aplicação...
+>>> [5/7] Clonando/Copiando código e instalando dependências...
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated fstream@1.0.12: This package is no longer supported.
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+
+added 716 packages, and audited 717 packages in 4m
+
+105 packages are looking for funding
+  run `npm fund` for details
+
+5 vulnerabilities (3 moderate, 2 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> gestor-financeiro-familiar@1.0.3 build
+> vite build
+
+NODE_ENV=production is not supported in the .env file. Only NODE_ENV=development is supported to create a development build of your project. If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.
+vite v5.4.21 building for production...
+✓ 2696 modules transformed.
+Generated an empty chunk: "auth".
+dist/index.html                            7.23 kB │ gzip:   2.45 kB
+dist/assets/index-BccavMXV.css            95.58 kB │ gzip:  13.86 kB
+dist/assets/auth-l0sNRNKZ.js               0.00 kB │ gzip:   0.02 kB
+dist/assets/purify.es-C_uT9hQ1.js         21.98 kB │ gzip:   8.74 kB
+dist/assets/ui-icons-BmRcAUOu.js          36.05 kB │ gzip:   6.72 kB
+dist/assets/react-vendor-AIrFsuJV.js     141.46 kB │ gzip:  45.43 kB
+dist/assets/index.es-CrDVOCaO.js         150.48 kB │ gzip:  51.44 kB
+dist/assets/html2canvas.esm-CBrSDip1.js  201.42 kB │ gzip:  48.03 kB
+dist/assets/pdf-D1kK-7Cp.js              398.49 kB │ gzip: 131.01 kB
+dist/assets/charts-DAehIZ_w.js           433.39 kB │ gzip: 114.73 kB
+dist/assets/index-Cnd6yIsW.js            723.88 kB │ gzip: 166.05 kB
+✓ built in 9.17s
+>>> [6/7] Configurando PostgreSQL e serviço systemd...
+Iniciando PostgreSQL...
+Synchronizing state of postgresql.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable postgresql
+Configurando base de dados PostgreSQL...
+CREATE ROLE
+ALTER ROLE
+NOTICE:  database "gestor_financeiro" does not exist, skipping
+DROP DATABASE
+CREATE DATABASE
+ALTER DATABASE
+GRANT
+
+═══════════════════════════════════════════════════════════
+✓ PostgreSQL configurado automaticamente!
+═══════════════════════════════════════════════════════════
+
+CREDENCIAIS GERADAS:
+  Utilizador: gestor_user
+  Senha: 9F83mihrWndcSKMw
+  String de conexão: postgresql://gestor_user:9F83mihrWndcSKMw@localhost:5432/gestor_financeiro
+
+>>> [7/7] Iniciando serviço...
+
+✓ SUCESSO! Serviço iniciado com sucesso!
+✓ Acesse a aplicação em: http://192.168.5.49:5000
+
+Credenciais padrão:
+  Usuário: admin
+  Senha: admin
+🔍 DIAGNÓSTICO DO GESTOR FINANCEIRO
+═════════════════════════════════════════════
+
+1️⃣  Status do Serviço:
+     Active: active (running) since Sun 2025-11-30 14:10:43 UTC; 3s ago
+
+2️⃣  Variáveis de Ambiente:
+  ✓ Arquivo .env.production existe
+  DATABASE_URL está configurado:
+DATABASE_URL=postgresql://gestor_user:9F83mihrWndcSKMw@localhost:5432/gestor_financeiro
+
+3️⃣  PostgreSQL:
+  ✓ PostgreSQL instalado
+     Active: active (exited) since Sun 2025-11-30 13:33:21 UTC; 37min ago
+
+4️⃣  Aplicação Node.js:
+  ✓ Node.js: v20.19.6
+  ✓ NPM: 10.8.2
+
+5️⃣  Teste de Conexão com Banco de Dados:
+  ✓ Conexão com banco de dados: OK
+
+6️⃣  Últimos Erros (últimos 10 linhas):
+Nov 30 14:10:45 hermantest npm[4299]:   where: undefined,
+Nov 30 14:10:45 hermantest npm[4299]:   schema: undefined,
+Nov 30 14:10:45 hermantest npm[4299]:   table: undefined,
+Nov 30 14:10:45 hermantest npm[4299]:   column: undefined,
+Nov 30 14:10:45 hermantest npm[4299]:   dataType: undefined,
+Nov 30 14:10:45 hermantest npm[4299]:   constraint: undefined,
+Nov 30 14:10:45 hermantest npm[4299]:   file: 'parse_relation.c',
+Nov 30 14:10:45 hermantest npm[4299]:   line: '1449',
+Nov 30 14:10:45 hermantest npm[4299]:   routine: 'parserOpenTable'
+Nov 30 14:10:45 hermantest npm[4299]: }
+
+═════════════════════════════════════════════
+Se tiver problemas, execute:
+  sudo journalctl -u gestor-financeiro -f
+para ver os logs em tempo real
+root@hermantest:/home/herman/finance.ao#
