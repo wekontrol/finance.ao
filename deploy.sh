@@ -40,7 +40,6 @@ sudo chown -R root:root $APP_DIR
 sudo chmod 755 $APP_DIR
 
 echo ">>> [5/7] Clonando/Copiando código e instalando dependências..."
-# Copiar arquivos atuais para APP_DIR
 sudo cp -r . $APP_DIR/
 cd $APP_DIR
 
@@ -53,8 +52,6 @@ sudo -u $APP_USER sh -c 'rm -rf node_modules && rm -rf dist && rm -f package-loc
 
 # Instalar como o usuário da aplicação
 sudo -u $APP_USER npm install
-
-# Compilar para produção
 sudo -u $APP_USER npm run build
 
 # Garantir permissões corretas após build
@@ -77,10 +74,9 @@ sudo systemctl enable postgresql || true
 # Configurar PostgreSQL automaticamente
 echo "Configurando base de dados PostgreSQL..."
 
-# Nome da base de dados e usuário
 DB_NAME="gestor_financeiro"
 DB_USER="gestor_user"
-DB_PASSWORD="$(openssl rand -base64 16)"  # Senha aleatória segura
+DB_PASSWORD="$(openssl rand -base64 16)"
 DB_HOST="localhost"
 DB_PORT="5432"
 
@@ -97,7 +93,7 @@ EOF
 # Gerar string de conexão
 POSTGRES_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Salvar credenciais num ficheiro seguro
+# Salvar credenciais
 CREDS_FILE="$APP_DIR/.postgres-credentials.txt"
 sudo tee $CREDS_FILE > /dev/null <<EOF
 ═══════════════════════════════════════════════════════════
@@ -117,55 +113,52 @@ EOF
 sudo chmod 600 $CREDS_FILE
 sudo chown $APP_USER:$APP_USER $CREDS_FILE
 
-# Mostrar credenciais durante a configuração
 echo ""
 echo "═══════════════════════════════════════════════════════════"
 echo "✓ PostgreSQL configurado automaticamente!"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
-echo "CREDENCIAIS GERADAS (guardar num local seguro):"
+echo "CREDENCIAIS GERADAS:"
 echo "  Utilizador: $DB_USER"
 echo "  Senha: $DB_PASSWORD"
-echo "  Base de dados: $DB_NAME"
-echo "  Host: $DB_HOST"
-echo "  Porta: $DB_PORT"
-echo ""
-echo "String de conexão:"
-echo "  $POSTGRES_URL"
-echo ""
-echo "⚠️  As credenciais foram salvas em: .postgres-credentials.txt"
+echo "  String de conexão: $POSTGRES_URL"
 echo ""
 
-POSTGRES_ENV="Environment=\"DATABASE_URL=$POSTGRES_URL\""
+# Criar arquivo .env.production com variáveis
+ENV_FILE="$APP_DIR/.env.production"
+sudo tee $ENV_FILE > /dev/null <<ENVEOF
+NODE_ENV=production
+PORT=5000
+DATABASE_URL=$POSTGRES_URL
+SESSION_SECRET=$(openssl rand -base64 32)
+ENVEOF
+
+sudo chmod 600 $ENV_FILE
+sudo chown $APP_USER:$APP_USER $ENV_FILE
 
 # Cria arquivo de serviço systemd
-sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<EOF
+sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<'SYSTEMDEOF'
 [Unit]
 Description=Gestor Financeiro Familiar - Node.js Application
-After=network.target
+After=network.target postgresql.service
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=$APP_USER
-WorkingDirectory=$APP_DIR
+User=nodeapp
+WorkingDirectory=/var/www/gestor-financeiro
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
-
-# Limites de recursos
 LimitNOFILE=65535
 LimitNPROC=65535
-
-Environment="NODE_ENV=production"
-Environment="PORT=5000"
-$POSTGRES_ENV
+EnvironmentFile=/var/www/gestor-financeiro/.env.production
 
 [Install]
 WantedBy=multi-user.target
-EOF
+SYSTEMDEOF
 
 # Habilita e inicia o serviço
 sudo systemctl daemon-reload
@@ -186,10 +179,9 @@ if sudo systemctl is-active --quiet gestor-financeiro; then
     echo "  Senha: admin"
     echo ""
     echo "Comandos úteis:"
-    echo "  Ver logs em tempo real: sudo journalctl -u gestor-financeiro -f"
-    echo "  Restart da aplicação: sudo systemctl restart gestor-financeiro"
-    echo "  Status do serviço: sudo systemctl status gestor-financeiro"
-    echo "  Parar aplicação: sudo systemctl stop gestor-financeiro"
+    echo "  Ver logs: sudo journalctl -u gestor-financeiro -f"
+    echo "  Restart: sudo systemctl restart gestor-financeiro"
+    echo "  Status: sudo systemctl status gestor-financeiro"
 else
     echo "✗ ERRO ao iniciar o serviço!"
     echo "Verificando logs..."
