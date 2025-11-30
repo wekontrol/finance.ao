@@ -1,0 +1,585 @@
+root@hermantest:/home/herman/finance.ao# cd /var/www/gestor-financeiro
+git pull origin main
+sudo systemctl restart gestor-financeiro
+sudo journalctl -u gestor-financeiro -f
+remote: Enumerating objects: 19, done.
+remote: Counting objects: 100% (19/19), done.
+remote: Compressing objects: 100% (5/5), done.
+remote: Total 13 (delta 9), reused 12 (delta 8), pack-reused 0 (from 0)
+Unpacking objects: 100% (13/13), 32.97 KiB | 151.00 KiB/s, done.
+From https://github.com/wekontrol/finance.ao
+ * branch            main       -> FETCH_HEAD
+   2047268..31e8ca1  main       -> origin/main
+Updating 2047268..31e8ca1
+error: Your local changes to the following files would be overwritten by merge:
+        .replit
+        server/db/schema.ts
+Please commit your changes or stash them before you merge.
+Aborting
+Nov 30 19:31:20 hermantest gestor-financeiro[42306]:     "        username' at line 7"
+Nov 30 19:31:20 hermantest gestor-financeiro[42306]: }
+Nov 30 19:31:20 hermantest systemd[1]: gestor-financeiro.service: Main process exited, code=exited, status=1/FAILURE
+Nov 30 19:31:20 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 19:31:20 hermantest systemd[1]: gestor-financeiro.service: Consumed 1.444s CPU time.
+Nov 30 19:31:24 hermantest systemd[1]: Stopped gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 19:31:24 hermantest systemd[1]: gestor-financeiro.service: Consumed 1.444s CPU time.
+Nov 30 19:31:24 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 19:31:26 hermantest gestor-financeiro[42335]: ✓ BD pronta
+Nov 30 19:31:26 hermantest systemd[1]: Started gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 19:31:26 hermantest gestor-financeiro[42337]: > gestor-financeiro-familiar@1.0.3 start
+Nov 30 19:31:26 hermantest gestor-financeiro[42337]: > bash init-db.sh . && NODE_ENV=production tsx server/index.ts
+Nov 30 19:31:28 hermantest gestor-financeiro[42353]: ✓ BD pronta
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: ✅ Using MySQL connection pool (production)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: 🔍 NODE_ENV=production, DATABASE_URL=SET
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: ✅ Production mode: Using MySQL
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: 📊 Schema init: NODE_ENV=production, DATABASE_URL=SET
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: ✅ Using memory session store (development mode)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: Warning: connect.session() MemoryStore is not
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: designed for a production environment, as it will leak
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: memory, and will not scale past a single process.
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: Server running on port 5000
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: Running in production mode
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: ✅ Sessions stored in MySQL (persistent)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: 📅 [Budget Scheduler] Started - auto-saves history every 30 minutes
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: ❌ Database initialization error: Error: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'CREATE TABLE IF NOT EXISTS users (
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:         id TEXT PRIMARY KEY,
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:         username' at line 7
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     at PromisePoolConnection.query (/var/www/gestor-financeiro/node_modules/mysql2/lib/promise/connection.js:29:22)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     at initializeDatabase (/var/www/gestor-financeiro/server/db/schema.ts:35:22)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     at async <anonymous> (/var/www/gestor-financeiro/server/index.ts:48:7) {
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   code: 'ER_PARSE_ERROR',
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   errno: 1064,
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   sql: '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS families (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS users (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        username TEXT UNIQUE NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        password TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        email TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        role TEXT NOT NULL DEFAULT 'MEMBER',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        avatar TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        status TEXT NOT NULL DEFAULT 'PENDING',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_by TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        family_id TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        birth_date TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        allow_parent_view INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        security_question TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        security_answer TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        language_preference TEXT DEFAULT 'pt',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        currency_provider_preference TEXT DEFAULT 'BNA',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (family_id) REFERENCES families(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS transactions (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        description TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        date TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        category TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        type TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_recurring INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        frequency TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        next_due_date TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS transaction_attachments (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        transaction_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        size INTEGER,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        type TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        content TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS savings_goals (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        target_amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        current_amount REAL DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        deadline TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        color TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        interest_rate REAL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS goal_transactions (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        goal_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        date TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        note TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (goal_id) REFERENCES savings_goals(id) ON DELETE CASCADE\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS budget_limits (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        category TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        limit_amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_default INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        translation_key TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, category),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS budget_history (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        category TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        month TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        limit_amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        spent_amount REAL DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, category, month),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS family_tasks (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        family_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        description TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        assigned_to TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_completed INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        due_date TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS family_events (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        family_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        title TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        date TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        type TEXT DEFAULT 'general',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        description TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS notifications (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        title TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        message TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        read INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        date TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS saved_simulations (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        loan_amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        interest_rate_annual REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        term_months INTEGER NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        system TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS app_settings (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        key TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        value TEXT\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS exchange_rates (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        provider TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        rates TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        last_update TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        next_update TEXT\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS notification_preferences (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_global INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        budget_alerts INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        subscription_alerts INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        financial_tips INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        goal_progress INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        email_notifications INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        push_notifications INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, is_global),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS ai_analysis_cache (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        month TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        analysis_data TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        expires_at TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, month),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS push_subscriptions (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        subscription TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_agent TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        last_active TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, subscription),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS forecast_history (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        predictions TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        confidence INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        notes TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS waste_analysis_history (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        waste_indicators TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        total_waste REAL DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        suggestions TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS api_configurations (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        provider TEXT UNIQUE NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        api_key TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        model TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_default INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        updated_at TEXT DEFAULT CURRENT_TIMESTAMP\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS translations (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        language TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        key TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        value TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_by TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        status TEXT DEFAULT 'active',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(language, key),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (created_by) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      /* Performance Indexes */\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_users_family_id ON users(family_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_users_created_by ON users(created_by);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_budget_limits_user_id ON budget_limits(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_budget_limits_user_category ON budget_limits(user_id, category);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_budget_history_user_id ON budget_history(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_goals_user_id ON savings_goals(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_goal_transactions_goal_id ON goal_transactions(goal_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_goal_transactions_user_id ON goal_transactions(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_family_tasks_family_id ON family_tasks(family_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_family_events_family_id ON family_events(family_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_forecast_history_user_id ON forecast_history(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_waste_analysis_user_id ON waste_analysis_history(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_saved_simulations_user_id ON saved_simulations(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transaction_attachments_transaction_id ON transaction_attachments(transaction_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_translations_language_key ON translations(language, key);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '    ',
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   sqlState: '42000',
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   sqlMessage: "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'CREATE TABLE IF NOT EXISTS users (\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        username' at line 7"
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: }
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: Database initialization error: Error: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'CREATE TABLE IF NOT EXISTS users (
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:         id TEXT PRIMARY KEY,
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:         username' at line 7
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     at PromisePoolConnection.query (/var/www/gestor-financeiro/node_modules/mysql2/lib/promise/connection.js:29:22)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     at initializeDatabase (/var/www/gestor-financeiro/server/db/schema.ts:35:22)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     at async <anonymous> (/var/www/gestor-financeiro/server/index.ts:48:7) {
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   code: 'ER_PARSE_ERROR',
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   errno: 1064,
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   sql: '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS families (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS users (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        username TEXT UNIQUE NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        password TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        email TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        role TEXT NOT NULL DEFAULT 'MEMBER',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        avatar TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        status TEXT NOT NULL DEFAULT 'PENDING',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_by TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        family_id TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        birth_date TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        allow_parent_view INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        security_question TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        security_answer TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        language_preference TEXT DEFAULT 'pt',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        currency_provider_preference TEXT DEFAULT 'BNA',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (family_id) REFERENCES families(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS transactions (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        description TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        date TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        category TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        type TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_recurring INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        frequency TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        next_due_date TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS transaction_attachments (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        transaction_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        size INTEGER,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        type TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        content TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS savings_goals (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        target_amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        current_amount REAL DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        deadline TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        color TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        interest_rate REAL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS goal_transactions (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        goal_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        date TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        note TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (goal_id) REFERENCES savings_goals(id) ON DELETE CASCADE\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS budget_limits (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        category TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        limit_amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_default INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        translation_key TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, category),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS budget_history (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        category TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        month TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        limit_amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        spent_amount REAL DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, category, month),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS family_tasks (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        family_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        description TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        assigned_to TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_completed INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        due_date TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS family_events (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        family_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        title TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        date TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        type TEXT DEFAULT 'general',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        description TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS notifications (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        title TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        message TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        read INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        date TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS saved_simulations (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        name TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        loan_amount REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        interest_rate_annual REAL NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        term_months INTEGER NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        system TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS app_settings (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        key TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        value TEXT\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS exchange_rates (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        provider TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        rates TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        last_update TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        next_update TEXT\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS notification_preferences (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_global INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        budget_alerts INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        subscription_alerts INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        financial_tips INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        goal_progress INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        email_notifications INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        push_notifications INTEGER DEFAULT 1,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, is_global),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS ai_analysis_cache (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        month TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        analysis_data TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        expires_at TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, month),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS push_subscriptions (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        subscription TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_agent TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        last_active TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(user_id, subscription),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS forecast_history (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        predictions TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        confidence INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        notes TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS waste_analysis_history (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        user_id TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        waste_indicators TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        total_waste REAL DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        suggestions TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (user_id) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS api_configurations (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        provider TEXT UNIQUE NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        api_key TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        model TEXT,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        is_default INTEGER DEFAULT 0,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        updated_at TEXT DEFAULT CURRENT_TIMESTAMP\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE TABLE IF NOT EXISTS translations (\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        language TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        key TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        value TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        created_by TEXT NOT NULL,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        status TEXT DEFAULT 'active',\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        UNIQUE(language, key),\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        FOREIGN KEY (created_by) REFERENCES users(id)\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      );\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      /* Performance Indexes */\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_users_family_id ON users(family_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_users_created_by ON users(created_by);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_budget_limits_user_id ON budget_limits(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_budget_limits_user_category ON budget_limits(user_id, category);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_budget_history_user_id ON budget_history(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_goals_user_id ON savings_goals(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_goal_transactions_goal_id ON goal_transactions(goal_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_goal_transactions_user_id ON goal_transactions(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_family_tasks_family_id ON family_tasks(family_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_family_events_family_id ON family_events(family_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_forecast_history_user_id ON forecast_history(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_waste_analysis_user_id ON waste_analysis_history(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_saved_simulations_user_id ON saved_simulations(user_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_transaction_attachments_transaction_id ON transaction_attachments(transaction_id);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '      CREATE INDEX IF NOT EXISTS idx_translations_language_key ON translations(language, key);\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '    ',
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   sqlState: '42000',
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:   sqlMessage: "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'CREATE TABLE IF NOT EXISTS users (\n" +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     '        id TEXT PRIMARY KEY,\n' +
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]:     "        username' at line 7"
+Nov 30 19:31:29 hermantest gestor-financeiro[42366]: }
+Nov 30 19:31:29 hermantest systemd[1]: gestor-financeiro.service: Main process exited, code=exited, status=1/FAILURE
+Nov 30 19:31:29 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 19:31:29 hermantest systemd[1]: gestor-financeiro.service: Consumed 1.481s CPU time.
+Nov 30 19:31:40 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart c
