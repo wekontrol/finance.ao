@@ -3,35 +3,34 @@ import fs from 'fs';
 import path from 'path';
 import mysql from 'mysql2/promise';
 
-// Get the raw MySQL pool directly
-const isProd = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL;
-
-let mysqlPoolRaw: any = null;
-
-if (isProd) {
-  const url = new URL(process.env.DATABASE_URL!);
-  mysqlPoolRaw = mysql.createPool({
-    host: url.hostname,
-    user: url.username,
-    password: url.password,
-    database: url.pathname.substring(1),
-    port: parseInt(url.port || '3306'),
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 0,
-  });
-}
-
 export async function initializeDatabase() {
   try {
-    // Create all tables for MySQL
-    // MySQL syntax with maximum SQLite compatibility
-    if (!mysqlPoolRaw) {
-      throw new Error('MySQL pool not initialized for schema operations');
+    // Check environment
+    const isProd = process.env.NODE_ENV === 'production';
+    const dbUrl = process.env.DATABASE_URL;
+    
+    console.log(`📊 Schema init: NODE_ENV=${process.env.NODE_ENV}, DATABASE_URL=${dbUrl ? 'SET' : 'NOT SET'}`);
+    
+    if (!isProd || !dbUrl) {
+      console.log('ℹ️  Skipping schema initialization (not production or no DATABASE_URL)');
+      return;
     }
-    const connection = await mysqlPoolRaw.getConnection();
+
+    // Create MySQL pool directly for this operation
+    const url = new URL(dbUrl);
+    const pool = mysql.createPool({
+      host: url.hostname,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.substring(1),
+      port: parseInt(url.port || '3306'),
+      waitForConnections: true,
+      connectionLimit: 1,
+      queueLimit: 0,
+    });
+
+    // Get connection
+    const connection = await pool.getConnection();
     
     await connection.query(`
       CREATE TABLE IF NOT EXISTS families (

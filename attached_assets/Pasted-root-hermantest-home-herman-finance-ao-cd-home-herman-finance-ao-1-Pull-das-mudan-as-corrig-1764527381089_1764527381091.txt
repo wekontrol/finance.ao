@@ -1,0 +1,51 @@
+root@hermantest:/home/herman/finance.ao# cd /home/herman/finance.ao
+
+# 1. Pull das mudanças corrigidas
+git pull origin main
+
+# 2. Rebuild (importante - usa a nova versão)
+npm run build 2>&1 | tail -3
+
+# 3. Restart
+sudo systemctl restart gestor-financeiro
+
+# 4. Espera 3 segundos e vê os logs
+sleep 3 && sudo journalctl -u gestor-financeiro -n 20 --no-pager
+remote: Enumerating objects: 13, done.
+remote: Counting objects: 100% (13/13), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 7 (delta 5), reused 7 (delta 5), pack-reused 0 (from 0)
+Unpacking objects: 100% (7/7), 1.66 KiB | 849.00 KiB/s, done.
+From https://github.com/wekontrol/finance.ao
+ * branch            main       -> FETCH_HEAD
+   ec267e7..eb339fe  main       -> origin/main
+Updating ec267e7..eb339fe
+Fast-forward
+ server/db/mysql.ts  | 12 +++++++++---
+ server/db/schema.ts | 26 +++++++++++++++++++++++++-
+ server/index.ts     |  1 +
+ 3 files changed, 35 insertions(+), 4 deletions(-)
+> vite build
+
+sh: 1: vite: not found
+Nov 30 18:29:22 hermantest gestor-financeiro[33741]: ✅ Using MySQL connection pool (production)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]: ✅ Production mode: Using PostgreSQL
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]: ❌ Database initialization error: TypeError: pool.getConnection is not a function
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at initializeDatabase (/var/www/gestor-financeiro/server/db/schema.ts:10:44)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at <anonymous> (/var/www/gestor-financeiro/server/index.ts:47:13)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at <anonymous> (/var/www/gestor-financeiro/server/index.ts:60:1)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]: ✅ Using memory session store (development mode)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]: Warning: connect.session() MemoryStore is not
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]: designed for a production environment, as it will leak
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]: memory, and will not scale past a single process.
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]: Database initialization error: TypeError: pool.getConnection is not a function
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at initializeDatabase (/var/www/gestor-financeiro/server/db/schema.ts:10:44)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at <anonymous> (/var/www/gestor-financeiro/server/index.ts:47:13)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at <anonymous> (/var/www/gestor-financeiro/server/index.ts:60:1)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+Nov 30 18:29:23 hermantest gestor-financeiro[33741]:     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+root@hermantest:/home/herman/finance.ao#
