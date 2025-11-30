@@ -262,23 +262,25 @@ export async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_translations_language_key ON translations(language, key);
     `);
 
-    // Check if admin exists
-    const adminResult = await pgPool.query('SELECT id FROM users WHERE username = $1', ['admin']);
-    
-    if (adminResult.rows.length === 0) {
-      // First create the admin family
-      await pgPool.query(
-        `INSERT INTO families (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
-        ['fam_admin', 'Admin Family']
-      );
+    // Check if admin exists (skip in development with in-memory DB)
+    if (process.env.NODE_ENV === 'production') {
+      const adminResult = await pgPool.query('SELECT id FROM users WHERE username = $1', ['admin']);
       
-      const hashedPassword = bcrypt.hashSync('admin', 10);
-      await pgPool.query(
-        `INSERT INTO users (id, username, password, name, role, avatar, status, family_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        ['u0', 'admin', hashedPassword, 'Super Admin', 'SUPER_ADMIN', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Super', 'APPROVED', 'fam_admin']
-      );
-      console.log('✅ Admin user created');
+      if (adminResult.rows.length === 0) {
+        // First create the admin family
+        await pgPool.query(
+          `INSERT INTO families (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+          ['fam_admin', 'Admin Family']
+        );
+        
+        const hashedPassword = bcrypt.hashSync('admin', 10);
+        await pgPool.query(
+          `INSERT INTO users (id, username, password, name, role, avatar, status, family_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          ['u0', 'admin', hashedPassword, 'Super Admin', 'SUPER_ADMIN', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Super', 'APPROVED', 'fam_admin']
+        );
+        console.log('✅ Admin user created');
+      }
     }
 
     // Load translations from JSON files

@@ -20,41 +20,18 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   try {
-    // Default fallback for development (in-memory)
-    let user: any = null;
-    
-    // Try admin/admin first for development
-    if (username === 'admin' && password === 'admin') {
-      user = {
-        id: 'u0',
-        username: 'admin',
-        name: 'Super Admin',
-        role: 'SUPER_ADMIN',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Super',
-        status: 'APPROVED',
-        family_id: 'fam_admin',
-        created_by: null,
-        birth_date: null,
-        allow_parent_view: false,
-      };
-    } else {
-      // Try real database if available
-      try {
-        const result = await pgPool.query(`
-          SELECT id, username, password, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-          FROM users WHERE username = $1
-        `, [username]);
-        user = result.rows[0];
-        
-        if (user && !bcrypt.compareSync(password, user.password)) {
-          return res.status(401).json({ error: 'Invalid credentials' });
-        }
-      } catch (dbError) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-    }
+    const result = await pgPool.query(`
+      SELECT id, username, password, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
+      FROM users WHERE username = $1
+    `, [username]);
+
+    const user = result.rows[0];
 
     if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    if (!bcrypt.compareSync(password, user.password)) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -71,14 +48,14 @@ router.post('/login', async (req: Request, res: Response) => {
     req.session.userId = user.id;
     req.session.user = userWithoutPassword;
 
-    // Force session save
+    // Force session save for PostgreSQL store
     req.session.save((err: any) => {
       if (err) {
         console.error('Session save error:', err);
         return res.status(500).json({ error: 'Session save failed' });
       }
       
-      console.log(`✅ User ${user.id} logged in successfully`);
+      console.log(`✅ User ${user.id} logged in successfully, session saved`);
       autoSaveMonthlyHistory(user.id);
       res.json({ user: userWithoutPassword });
     });
