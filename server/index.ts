@@ -28,6 +28,7 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
 
 // Determine environment
 const isProd = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL;
+console.log(`🔍 NODE_ENV=${process.env.NODE_ENV}, DATABASE_URL=${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
 if (isProd) {
   console.log('✅ Production mode: Using MySQL');
 } else {

@@ -49,8 +49,14 @@ export async function initializeSessionsTable() {
   }
 }
 
-// Export the real MySQL pool for schema initialization
-export { pool as mysqlPoolRaw };
+// CRITICAL: Export the actual MySQL pool instance BEFORE wrapping
+// This is used by schema.ts for direct connection operations
+if (isProd && pool) {
+  // Verify it's MySQL pool with getConnection method
+  if (!pool.getConnection) {
+    throw new Error('MySQL pool missing getConnection method!');
+  }
+}
 
-// Export the wrapped pool as default
+export { pool as mysqlPoolRaw };
 export default pool;

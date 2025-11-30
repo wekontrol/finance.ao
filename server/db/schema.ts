@@ -1,12 +1,36 @@
-import { mysqlPoolRaw } from './index';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
+import mysql from 'mysql2/promise';
+
+// Get the raw MySQL pool directly
+const isProd = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL;
+
+let mysqlPoolRaw: any = null;
+
+if (isProd) {
+  const url = new URL(process.env.DATABASE_URL!);
+  mysqlPoolRaw = mysql.createPool({
+    host: url.hostname,
+    user: url.username,
+    password: url.password,
+    database: url.pathname.substring(1),
+    port: parseInt(url.port || '3306'),
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+  });
+}
 
 export async function initializeDatabase() {
   try {
     // Create all tables for MySQL
     // MySQL syntax with maximum SQLite compatibility
+    if (!mysqlPoolRaw) {
+      throw new Error('MySQL pool not initialized for schema operations');
+    }
     const connection = await mysqlPoolRaw.getConnection();
     
     await connection.query(`
