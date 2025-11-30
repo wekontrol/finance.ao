@@ -1,63 +1,81 @@
-# Gestor Financeiro Familiar - PRODUCTION READY ✅
+# Gestor Financeiro Familiar
 
-## Overview
-A comprehensive family financial management platform built with React, TypeScript, and Express.js, offering intelligent financial tracking and AI-powered insights. The application provides multi-language support with per-user preferences, per-provider AI routing, and a dedicated `TRANSLATOR` role for managing translations. It is a production-ready, fully internationalized solution with a responsive, mobile-first UI. Key features include AI integration with multiple providers, automated translation management, real-time currency exchange rates, Excel import/export for transactions, PDF report generation, and system dark/light mode detection. The project also includes advanced AI planning features with caching and comparative charts for financial analysis.
+## 📋 Resumo
+Plataforma de gestão financeira familiar com React, TypeScript, Express.js e PostgreSQL.
+**Deploy independente em Ubuntu Linux - ZERO custos do Replit após instalação.**
 
-## User Preferences
-Fast Mode development - small focused edits preferred.
+## 🚀 Deploy em Ubuntu
 
-## Recent Changes (Nov 30, 2025)
-- **Fixed 401 Unauthorized in AI Planning:** Corrected database connection from `TheFinance` to `DATABASE_URL` environment variable
-- **Configured Session Cookies:** Updated cookie configuration for development (sameSite: 'lax', secure: false) to properly handle cross-port sessions between Vite (5000) and Express (3001)
-- **PostgreSQL Database:** Set up with Replit's built-in database, all tables created and initialized
-- **User Isolation:** Verified that all data (transactions, budgets, goals, AI analysis) is properly isolated per user with secure queries
-- **Multi-User Support:** Confirmed that new users can create accounts and access AI Planning without 401 errors after authentication
-- **Fixed Budget Loading Issues:** Improved PostgreSQL connection pool configuration (increased timeouts from 2s to 10s)
-- **Implemented Real System Updates:** Replaced simulated update progress with actual command execution (git pull, npm install, build, systemctl restart)
-- **Complete Independence from Replit:** 
-  - Updated deploy.sh to use correct DATABASE_URL environment variable
-  - Created .env.example with all necessary configurations
-  - Created README_DEPLOYMENT.md with full deployment guide
-  - Verified no Replit dependencies in codebase
-  - Application fully functional on standalone Linux servers
+```bash
+git clone https://github.com/wekontrol/finance.ao
+cd finance.ao
+sudo bash install.sh
+```
 
-## System Architecture
+Acesse em `http://[seu-ip]:5000` com `admin/admin`.
 
-### UI/UX Decisions
-The application features a fully translated user interface with dynamic language switching, supporting six languages (PT, EN, ES, UM, LN, FR). It includes 16 default translatable budget categories per user and a mobile-first, responsive design with text scaling and dynamic sizing. Frontend-backend language synchronization dynamically loads available languages. Auto system theme detection (dark/light mode) is implemented, respecting user overrides. The AI Planning section incorporates visual elements like line charts for spending trends and bar charts for budget vs. actual comparisons.
+## ⚠️ IMPORTANTE - Remover Custos do Replit
 
-### Technical Implementations
--   **Multi-Language System (i18n):** Stores per-user language preferences in the database, with all major components 100% translated and dynamic language loading. AI services provide localized responses.
--   **AI Abstraction Layer:** A single `aiProviderService.ts` routes all AI calls to the user-selected provider (Google Gemini, OpenRouter, Groq, Puter).
--   **Translator Role & Automated Translation Manager:** A `TRANSLATOR` user role provides a UI for managing translations, featuring a dashboard, search/filter, show-untranslated filter, multi-language inline editing, ZIP export/import, and add-new-language functionality.
--   **Budget Management:** New users receive 16 default budget categories, with options for custom categories. Deleting custom budgets reassigns transactions to "Geral". Default budgets are undeletable.
--   **Real-time Currency Conversion:** Fetches live exchange rates from a public API, with a fallback to hardcoded rates. Converts all currencies to AOA base for multi-currency display, supporting 7 currencies across 6 languages.
--   **Excel Integration:** Allows users to download a blank transaction template and upload filled Excel files for bulk transaction import, with validation and error reporting.
--   **PDF Reports:** Generates enhanced PDF reports with a custom app logo, transaction summaries, detailed tables, and savings goals, supporting all 6 languages.
--   **App Logo Upload:** SUPER_ADMINs can upload a custom application logo, stored in `app_settings` and used in PDF reports.
--   **AI Planning and Caching:** Integrates AI for financial health analysis, spending trends, savings potential, and goal tracking. Analysis results are cached for 30 minutes in `ai_analysis_cache` to improve performance, with a manual refresh option.
--   **React Query Integration:** Uses `@tanstack/react-query` for state management, enabling auto-refresh of UI components after data mutations.
--   **Database Optimization:** Implements 23 performance indexes across key tables (Users, Transactions, Budget, Goals, Family, Tasks, Events) to significantly speed up query execution.
--   **Security Fixes:** Implemented per-user data isolation rules for transactions and budget summaries based on user roles (`SUPER_ADMIN`, `MANAGER`, `MEMBER`) and family relationships (minors, `allow_parent_view`). Helper functions `isMinor` and `canViewUserTransactions` centralize permission checks.
+Este projeto **não usa PostgreSQL do Replit**. Para remover custos:
 
-### System Design Choices
--   **File Structure:** `services/` for AI abstraction, `components/`, `public/locales/` for JSON translation files, `server/` for database schemas and route handlers.
--   **Responsive Design Patterns:** Applied consistently with text scaling and dynamic numeric value sizing.
--   **Translation Key Pattern:** All keys follow `module.specific_key` format.
--   **Variable Naming:** Consistent naming in map functions to avoid conflicts with the translation function `t`.
+1. Em Replit: "Tools" → "Database" → "Delete Database"
+2. Isto **para todos os custos**
+3. O código continua a funcionar em Ubuntu (usa DB local)
 
-## External Dependencies
--   **AI Providers:**
-    -   Google Gemini
-    -   OpenRouter
-    -   Groq
-    -   Puter
--   **Libraries:**
-    -   `jszip`
-    -   `jspdf`
-    -   `jspdf-autotable`
-    -   `ExcelJS`
-    -   `@tanstack/react-query`
-    -   `recharts`
--   **Database:** PostgreSQL (Neon-backed) for both development and production environments.
--   **Currency API:** Fawaz Ahmed Currency API (`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`).
+## 📚 Arquitetura
+
+- **Frontend**: React + TypeScript + Vite + Tailwind
+- **Backend**: Express.js + TypeScript
+- **Database**: PostgreSQL (local em Ubuntu)
+- **Deploy**: systemd service em Ubuntu Linux
+
+## 🔧 Estrutura do Projeto
+
+```
+/
+├── src/
+│   ├── components/    # React components
+│   ├── pages/         # Páginas
+│   ├── styles/        # CSS
+│   └── App.tsx
+├── server/
+│   ├── routes/        # Express routes
+│   ├── db/            # Database config
+│   └── index.ts
+├── package.json
+├── deploy.sh          # Script de deployment
+└── init-db.sh         # Inicialização da BD
+```
+
+## 🛠️ Desenvolvimento Replit (se usar)
+
+```bash
+npm run dev
+```
+
+Aplicação em `http://localhost:5000`
+
+## 📝 Notas de Implementação
+
+- **Session Storage**: Usa PostgreSQL (connect-pg-simple)
+- **Autenticação**: Passwords com bcryptjs
+- **Multilíngue**: Suporta PT-AO, PT-PT, EN
+- **Credenciais Default**: admin / admin (alterar em produção)
+
+## 🔐 Segurança em Produção
+
+- `.env.production` é gerado automaticamente com secrets aleatórios
+- Passwords hasheadas com bcryptjs
+- Sessions em PostgreSQL
+- Cookies secure em HTTPS
+
+## 📞 Suporte
+
+- Logs: `sudo journalctl -u gestor-financeiro -f`
+- Status: `sudo systemctl status gestor-financeiro`
+- Reiniciar: `sudo systemctl restart gestor-financeiro`
+
+---
+
+**Última atualização:** 2025-11-30
+**Versão:** 1.0.3
