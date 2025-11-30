@@ -59,23 +59,23 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
-echo "Limpando dependências antigas..."
-sudo rm -rf node_modules dist package-lock.json 2>/dev/null || true
+echo "Limpando node_modules antigos..."
+sudo rm -rf node_modules package-lock.json 2>/dev/null || true
 echo "✓ Limpeza concluída"
 
-echo "Instalando dependências npm (incluindo Vite para build)..."
-sudo npm install --legacy-peer-deps 2>&1 | tail -5 || {
-    echo "ERRO: npm install falhou!"
+# Verifica se dist/ existe (foi compilado no git)
+if [ ! -d "dist" ]; then
+    echo "❌ ERRO: dist/ não encontrado!"
+    echo "O frontend deveria ser compilado ANTES de fazer commit!"
+    echo "Compile localmente: npm run build"
+    exit 1
+fi
+
+echo "Instalando apenas dependências de PRODUÇÃO (sem Vite)..."
+sudo npm install --production --legacy-peer-deps 2>&1 | tail -5 || {
+    echo "ERRO: npm install --production falhou!"
     exit 1
 }
-
-echo "Compilando frontend..."
-npm run build 2>&1 | tail -5 || {
-    echo "AVISO: Build falhou, continuando (dist pode estar desatualizado)"
-}
-
-echo "Removendo dependências de desenvolvimento (Vite, TypeScript, etc)..."
-npm install --production --legacy-peer-deps 2>&1 | tail -3 || true
 
 # Após instalação, dar permissões ao nodeapp
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
