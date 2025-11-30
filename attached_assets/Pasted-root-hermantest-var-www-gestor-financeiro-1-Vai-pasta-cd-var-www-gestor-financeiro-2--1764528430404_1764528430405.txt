@@ -1,0 +1,124 @@
+root@hermantest:/var/www/gestor-financeiro# # 1. Vai à pasta
+cd /var/www/gestor-financeiro
+
+# 2. LIMPA o conflito git (stash dos attached_assets)
+sudo git stash
+
+# 3. PULL das mudanças corrigidas
+sudo git pull origin main
+
+# 4. EXECUTA o deploy.sh (vai instalar, compilar, remover Vite)
+sudo bash deploy.sh 2>&1 | tail -30
+
+# 5. VÊ os logs
+sudo journalctl -u gestor-financeiro -n 50 --no-pager
+Saved working directory and index state WIP on main: 9275ce4 Optimize deployment script to remove development dependencies
+remote: Enumerating objects: 13, done.
+remote: Counting objects: 100% (13/13), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 8 (delta 5), reused 8 (delta 5), pack-reused 0 (from 0)
+Unpacking objects: 100% (8/8), 3.18 KiB | 1.59 MiB/s, done.
+From https://github.com/wekontrol/finance.ao
+ * branch            main       -> FETCH_HEAD
+   e093115..565a2c4  main       -> origin/main
+Updating 9275ce4..565a2c4
+Fast-forward
+ ...one-do-teu-reposit-rio-GitHub-git-clone-https-github-com-wekont-1764526719738_1764526719740.txt | 375 ------------------------
+ ...-finance-ao-1-Pull-das-mudan-as-git-pull-origin-main-2-Rebuild--1764527050788_1764527050790.txt |  75 -----
+ ...erman-finance-ao-1-Vai-pasta-cd-var-www-gestor-financeiro-2-Pul-1764528214670_1764528214671.txt |  85 ++++++
+ ...inance-ao-Pull-das-mudan-as-git-pull-origin-main-Restart-do-ser-1764526932908_1764526932909.txt |  54 ----
+ ...nce-ao-cat-var-www-gestor-financeiro-env-production-NODE-ENV-pr-1764527594113_1764527594113.txt |  39 ---
+ ...finance-ao-cd-home-herman-finance-ao-1-Pull-das-mudan-as-corrig-1764527381089_1764527381091.txt |  51 ----
+ ...ance-ao-cd-home-herman-finance-ao-sudo-rm-rf-var-www-gestor-fin-1764518480373_1764518480373.txt |  64 -----
+ ...-clone-https-github-com-wekontrol-finance-ao-cd-finance-ao-Clon-1764517783611_1764517783615.txt | 136 ---------
+ ...-clone-https-github-com-wekontrol-finance-ao-cd-finance-ao-Clon-1764517896717_1764517896718.txt | 136 ---------
+ ...-clone-https-github-com-wekontrol-finance-ao-cd-finance-ao-sudo-1764515668577_1764515668579.txt | 761 -------------------------------------------------
+ attached_assets/image_1764518993960.png                                                            | Bin 112636 -> 0 bytes
+ attached_assets/targeted_element_1764520670566.png                                                 | Bin 3254 -> 0 bytes
+ attached_assets/targeted_element_1764524386946.png                                                 | Bin 3307 -> 0 bytes
+ server/db/mysql.ts                                                                                 |   1 +
+ server/db/schema.ts                                                                                |  29 +-
+ 15 files changed, 107 insertions(+), 1699 deletions(-)
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-Clone-do-teu-reposit-rio-GitHub-git-clone-https-github-com-wekont-1764526719738_1764526719740.txt
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-finance-ao-1-Pull-das-mudan-as-git-pull-origin-main-2-Rebuild--1764527050788_1764527050790.txt
+ create mode 100644 attached_assets/Pasted-root-hermantest-home-herman-finance-ao-1-Vai-pasta-cd-var-www-gestor-financeiro-2-Pul-1764528214670_1764528214671.txt
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-finance-ao-Pull-das-mudan-as-git-pull-origin-main-Restart-do-ser-1764526932908_1764526932909.txt
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-finance-ao-cat-var-www-gestor-financeiro-env-production-NODE-ENV-pr-1764527594113_1764527594113.txt
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-finance-ao-cd-home-herman-finance-ao-1-Pull-das-mudan-as-corrig-1764527381089_1764527381091.txt
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-finance-ao-cd-home-herman-finance-ao-sudo-rm-rf-var-www-gestor-fin-1764518480373_1764518480373.txt
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-git-clone-https-github-com-wekontrol-finance-ao-cd-finance-ao-Clon-1764517783611_1764517783615.txt
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-git-clone-https-github-com-wekontrol-finance-ao-cd-finance-ao-Clon-1764517896717_1764517896718.txt
+ delete mode 100644 attached_assets/Pasted-root-hermantest-home-herman-git-clone-https-github-com-wekontrol-finance-ao-cd-finance-ao-sudo-1764515668577_1764515668579.txt
+ delete mode 100644 attached_assets/image_1764518993960.png
+ delete mode 100644 attached_assets/targeted_element_1764520670566.png
+ delete mode 100644 attached_assets/targeted_element_1764524386946.png
+>>> [1/7] Atualizando sistema...
+Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:2 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:3 http://ao.archive.ubuntu.com/ubuntu noble InRelease
+Hit:4 http://ao.archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:5 http://ao.archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+curl is already the newest version (8.5.0-2ubuntu10.6).
+git is already the newest version (1:2.43.0-1ubuntu7.3).
+build-essential is already the newest version (12.10ubuntu1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+>>> [2/7] Configurando Git globalmente...
+>>> [3/7] Verificando Node.js...
+Node.js já instalado: v20.19.6
+>>> [4/7] Preparando diretório da aplicação...
+cp: '.' and '/var/www/gestor-financeiro/.' are the same file
+Nov 30 18:44:44 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 51.
+Nov 30 18:44:44 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:44:44 hermantest gestor-financeiro[36957]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:44:44 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:44:44 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:44:44 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:44:54 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 52.
+Nov 30 18:44:54 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:44:54 hermantest gestor-financeiro[36959]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:44:54 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:44:54 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:44:54 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:45:04 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 53.
+Nov 30 18:45:04 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:45:04 hermantest gestor-financeiro[36965]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:45:04 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:45:04 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:45:04 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:45:14 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 54.
+Nov 30 18:45:14 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:45:14 hermantest gestor-financeiro[36967]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:45:14 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:45:14 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:45:14 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:45:25 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 55.
+Nov 30 18:45:25 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:45:25 hermantest gestor-financeiro[36970]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:45:25 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:45:25 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:45:25 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:45:35 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 56.
+Nov 30 18:45:35 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:45:35 hermantest gestor-financeiro[36972]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:45:35 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:45:35 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:45:35 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:45:45 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 57.
+Nov 30 18:45:45 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:45:45 hermantest gestor-financeiro[36975]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:45:45 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:45:45 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:45:45 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:45:55 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 58.
+Nov 30 18:45:55 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:45:55 hermantest gestor-financeiro[36977]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:45:55 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:45:55 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:45:55 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:46:06 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 59.
+Nov 30 18:46:06 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+root@hermantest:/var/www/gestor-financeiro#
