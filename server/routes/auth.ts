@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pgPool from '../db/postgres';
+import { findUserByUsername as findUserInMemory } from '../db/inmemory';
 import { autoSaveMonthlyHistory } from './budget';
 
 const router = Router();
@@ -20,41 +21,26 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   try {
-    // Default fallback for development (in-memory)
     let user: any = null;
-    
-    // Try admin/admin first for development
-    if (username === 'admin' && password === 'admin') {
-      user = {
-        id: 'u0',
-        username: 'admin',
-        name: 'Super Admin',
-        role: 'SUPER_ADMIN',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Super',
-        status: 'APPROVED',
-        family_id: 'fam_admin',
-        created_by: null,
-        birth_date: null,
-        allow_parent_view: false,
-      };
-    } else {
-      // Try real database if available
-      try {
-        const result = await pgPool.query(`
-          SELECT id, username, password, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-          FROM users WHERE username = $1
-        `, [username]);
-        user = result.rows[0];
-        
-        if (user && !bcrypt.compareSync(password, user.password)) {
-          return res.status(401).json({ error: 'Invalid credentials' });
-        }
-      } catch (dbError) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
+
+    // Try database first
+    const result = await pgPool.query(`
+      SELECT id, username, password, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
+      FROM users WHERE username = $1
+    `, [username]);
+
+    user = result.rows[0];
+
+    // If not found in DB, try in-memory (development)
+    if (!user) {
+      user = findUserInMemory(username);
     }
 
     if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    if (!bcrypt.compareSync(password, user.password)) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -71,7 +57,6 @@ router.post('/login', async (req: Request, res: Response) => {
     req.session.userId = user.id;
     req.session.user = userWithoutPassword;
 
-    // Force session save
     req.session.save((err: any) => {
       if (err) {
         console.error('Session save error:', err);
@@ -122,60 +107,85 @@ router.post('/register', async (req: Request, res: Response) => {
 
     const userId = `u${Date.now()}`;
     const hashedPassword = bcrypt.hashSync(password, 10);
-    const familyId = `fam_${Date.now()}`;
+    const familyId = `fam${Date.now()}`;
 
-    await pgPool.query(`
-      INSERT INTO families (id, name)
-      VALUES ($1, $2)
-    `, [familyId, familyName.trim()]);
+    // Create family
+    await pgPool.query(
+      `INSERT INTO families (id, name) VALUES ($1, $2)`,
+      [familyId, familyName]
+    );
 
-    await pgPool.query(`
-      INSERT INTO users (id, username, password, name, email, role, avatar, status, family_id, security_question, security_answer)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    `, [
-      userId,
-      username,
-      hashedPassword,
-      name,
-      email || null,
-      'MANAGER',
-      '/default-avatar.svg',
-      'APPROVED',
-      familyId,
-      securityQuestion || null,
-      securityAnswer ? securityAnswer.toLowerCase() : null
-    ]);
+    // Create user
+    await pgPool.query(
+      `INSERT INTO users (id, username, password, name, email, role, avatar, status, family_id, security_question, security_answer)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [userId, username, hashedPassword, name, email, 'ADMIN', 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username, 'PENDING', familyId, securityQuestion, bcrypt.hashSync(securityAnswer, 10)]
+    );
 
-    try {
-      let budgetsCreated = 0;
-      for (const budget of defaultBudgets) {
-        const budgetId = `bl${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-        await pgPool.query(`
-          INSERT INTO budget_limits (id, user_id, category, limit_amount, is_default)
-          VALUES ($1, $2, $3, $4, 1)
-        `, [budgetId, userId, budget.category, budget.limit]);
-        budgetsCreated++;
-      }
-      console.log(`✓ Created ${budgetsCreated} default budgets for user ${userId}`);
-    } catch (error: any) {
-      console.error(`✗ Error creating default budgets for user ${userId}:`, error.message);
-      return res.status(500).json({ error: 'Failed to create default budgets', details: error.message });
+    // Create default budgets
+    for (const budget of defaultBudgets) {
+      const budgetId = `b${Date.now()}${Math.random()}`;
+      await pgPool.query(
+        `INSERT INTO budget_limits (id, user_id, category, limit_amount, is_default)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [budgetId, userId, budget.category, budget.limit, true]
+      );
     }
 
-    const userResult = await pgPool.query(`
-      SELECT id, username, name, role, avatar, status, family_id as "familyId"
-      FROM users WHERE id = $1
-    `, [userId]);
-
-    const user = userResult.rows[0];
-
-    req.session.userId = user.id;
-    req.session.user = user;
-
-    res.status(201).json({ user });
+    res.status(201).json({ 
+      message: 'User registered successfully. Wait for admin approval.',
+      userId 
+    });
   } catch (error: any) {
-    console.error('Registration error:', error.message);
-    return res.status(500).json({ error: 'Registration failed', details: error.message });
+    console.error('Register error:', error);
+    res.status(500).json({ error: 'Registration failed', details: error.message });
+  }
+});
+
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  const { username, securityAnswer } = req.body;
+
+  try {
+    const result = await pgPool.query(
+      'SELECT id, security_answer FROM users WHERE username = $1',
+      [username]
+    );
+
+    const user = result.rows[0];
+    if (!user || !bcrypt.compareSync(securityAnswer, user.security_answer)) {
+      return res.status(401).json({ error: 'Invalid security answer' });
+    }
+
+    const tempPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = bcrypt.hashSync(tempPassword, 10);
+
+    await pgPool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
+
+    res.json({ tempPassword, message: 'Temporary password sent' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Password reset failed' });
+  }
+});
+
+router.get('/me', async (req: Request, res: Response) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    const result = await pgPool.query(
+      'SELECT id, username, name, role, avatar, status, family_id FROM users WHERE id = $1',
+      [req.session.userId]
+    );
+
+    const user = result.rows[0];
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 
@@ -184,40 +194,9 @@ router.post('/logout', (req: Request, res: Response) => {
     if (err) {
       return res.status(500).json({ error: 'Logout failed' });
     }
+    res.clearCookie('connect.sid');
     res.json({ message: 'Logged out successfully' });
   });
-});
-
-router.get('/me', (req: Request, res: Response) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  res.json({ user: req.session.user });
-});
-
-router.post('/recover-password', async (req: Request, res: Response) => {
-  const { username, securityAnswer, newPassword } = req.body;
-
-  try {
-    const result = await pgPool.query('SELECT id, security_answer FROM users WHERE username = $1', [username]);
-    const user = result.rows[0];
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    if (!user.security_answer || user.security_answer !== securityAnswer.toLowerCase()) {
-      return res.status(401).json({ error: 'Security answer is incorrect' });
-    }
-
-    const hashedPassword = bcrypt.hashSync(newPassword, 10);
-    await pgPool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
-
-    res.json({ message: 'Password updated successfully' });
-  } catch (error: any) {
-    console.error('Password recovery error:', error.message);
-    return res.status(500).json({ error: 'Password recovery failed', details: error.message });
-  }
 });
 
 export default router;
