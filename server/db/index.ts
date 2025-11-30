@@ -3,9 +3,11 @@
  * SQLite para desenvolvimento
  * MySQL para produção (máxima compatibilidade)
  */
-import mysqlPool from './mysql';
+import mysqlPool, { mysqlPoolRaw } from './mysql';
 import { createQueryWrapper } from './query-converter';
 
 // Exportar pool com wrapper inteligente
 export default createQueryWrapper(mysqlPool);
-export { mysqlPool as rawPool };
+
+// Exportar o pool real para operações que precisam de getConnection()
+export { mysqlPoolRaw };

@@ -1,0 +1,75 @@
+root@hermantest:/home/herman/finance.ao# # 1. Pull das mudanças
+git pull origin main
+# 2. Rebuild (rápido)
+npm run build
+# 3. Restart do serviço
+sudo systemctl restart gestor-financeiro
+# 4. Verificar status
+sudo systemctl status gestor-financeiro
+# 5. Ver logs em tempo real (5 segundos)
+sudo journalctl -u gestor-financeiro -n 30 --no-pager
+remote: Enumerating objects: 14, done.
+remote: Counting objects: 100% (14/14), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 8 (delta 6), reused 8 (delta 6), pack-reused 0 (from 0)
+Unpacking objects: 100% (8/8), 2.35 KiB | 1.18 MiB/s, done.
+From https://github.com/wekontrol/finance.ao
+ * branch            main       -> FETCH_HEAD
+   b48540f..4192441  main       -> origin/main
+Updating b48540f..4192441
+Fast-forward
+ ...inance-ao-Pull-das-mudan-as-git-pull-origin-main-Restart-do-ser-1764526932908_1764526932909.txt | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ server/db/mysql.ts                                                                                 |  1 +
+ server/db/schema.ts                                                                                |  4 ++--
+ 3 files changed, 57 insertions(+), 2 deletions(-)
+ create mode 100644 attached_assets/Pasted-root-hermantest-home-herman-finance-ao-Pull-das-mudan-as-git-pull-origin-main-Restart-do-ser-1764526932908_1764526932909.txt
+
+> gestor-financeiro-familiar@1.0.3 build
+> vite build
+
+sh: 1: vite: not found
+● gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application
+     Loaded: loaded (/etc/systemd/system/gestor-financeiro.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2025-11-30 18:23:58 UTC; 15ms ago
+    Process: 32763 ExecStartPre=/bin/bash /var/www/gestor-financeiro/init-db.sh /var/www/gestor-financeiro (code=exited, status=0/SUCCESS)
+   Main PID: 32765 (node)
+      Tasks: 6 (limit: 2267)
+     Memory: 4.2M (peak: 4.2M)
+        CPU: 13ms
+     CGroup: /system.slice/gestor-financeiro.service
+             └─32765 node /usr/bin/npm start
+
+Nov 30 18:23:56 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:23:58 hermantest gestor-financeiro[32763]: ✓ BD pronta
+Nov 30 18:23:58 hermantest systemd[1]: Started gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:23:45 hermantest gestor-financeiro[32696]: > bash init-db.sh . && NODE_ENV=production tsx server/index.ts
+Nov 30 18:23:47 hermantest gestor-financeiro[32709]: ✓ BD pronta
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]: ✅ Using MySQL connection pool (production)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]: ✅ Production mode: Using PostgreSQL
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]: ❌ Database initialization error: TypeError: pool.getConnection is not a function
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at initializeDatabase (/var/www/gestor-financeiro/server/db/schema.ts:10:44)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at <anonymous> (/var/www/gestor-financeiro/server/index.ts:47:13)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at <anonymous> (/var/www/gestor-financeiro/server/index.ts:60:1)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]: ✅ Using memory session store (development mode)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]: Warning: connect.session() MemoryStore is not
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]: designed for a production environment, as it will leak
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]: memory, and will not scale past a single process.
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]: Database initialization error: TypeError: pool.getConnection is not a function
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at initializeDatabase (/var/www/gestor-financeiro/server/db/schema.ts:10:44)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at <anonymous> (/var/www/gestor-financeiro/server/index.ts:47:13)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at <anonymous> (/var/www/gestor-financeiro/server/index.ts:60:1)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+Nov 30 18:23:48 hermantest gestor-financeiro[32722]:     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+Nov 30 18:23:48 hermantest systemd[1]: gestor-financeiro.service: Main process exited, code=exited, status=1/FAILURE
+Nov 30 18:23:48 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:23:48 hermantest systemd[1]: gestor-financeiro.service: Consumed 1.380s CPU time.
+Nov 30 18:23:56 hermantest systemd[1]: Stopped gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:23:56 hermantest systemd[1]: gestor-financeiro.service: Consumed 1.380s CPU time.
+Nov 30 18:23:56 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:23:58 hermantest gestor-financeiro[32763]: ✓ BD pronta
+Nov 30 18:23:58 hermantest systemd[1]: Started gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+root@hermantest:/home/herman/finance.ao#

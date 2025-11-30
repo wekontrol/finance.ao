@@ -49,5 +49,8 @@ export async function initializeSessionsTable() {
   }
 }
 
-export { pool as rawPool };
+// Export the real MySQL pool for schema initialization
+export { pool as mysqlPoolRaw };
+
+// Export the wrapped pool as default
 export default pool;
