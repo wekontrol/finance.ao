@@ -43,25 +43,33 @@ Uma plataforma completa para gestão financeira doméstica com arquitetura serve
 
 ## 🚀 Instalação
 
-### Opção 1: Script Automático (Recomendado)
-
-Para instalar em produção no Ubuntu, utilize o script automático:
+### Produção (Ubuntu 24.04) - UM ÚNICO COMANDO:
 
 ```bash
-chmod +x deploy.sh
-sudo ./deploy.sh
+sudo bash -c 'git clone https://github.com/wekontrol/finance.ao /var/www/gestor-financeiro && cd /var/www/gestor-financeiro && bash deploy.sh'
 ```
 
-O script irá:
-1. Instalar Node.js 20 e dependências do sistema
-2. Instalar pacotes npm
-3. Compilar a aplicação para produção
-4. Criar um usuário systemd para rodar a aplicação
-5. Configurar e iniciar o serviço Node.js com restart automático
+**Isto faz tudo automaticamente:**
+- ✅ Instala Node.js 20
+- ✅ Instala MySQL Server
+- ✅ Cria database + user
+- ✅ Gera `.env.production`
+- ✅ Compila frontend
+- ✅ Remove dependências dev
+- ✅ Cria serviço systemd
+- ✅ Inicia aplicação
 
-### Opção 2: Instalação Manual
+**Aguarde 5-10 minutos e depois aceda:**
+```
+http://192.168.5.49:5000
+Login: admin / admin
+```
 
-Consulte o arquivo `README_INSTALL.md` para instruções passo a passo.
+### Atualizações Futuras:
+
+```bash
+cd /var/www/gestor-financeiro && git pull origin main && sudo systemctl restart gestor-financeiro
+```
 
 ### Instalação Local (Desenvolvimento)
 
