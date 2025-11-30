@@ -1,10 +1,10 @@
-import pgPool from '../db/postgres';
+import pool from '../db/index';
 
 /**
  * Get all keys from the base language (Portuguese)
  */
 export async function getBaseLanguageKeys(): Promise<Set<string>> {
-  const result = await pgPool.query(`
+  const result = await pool.query(`
     SELECT DISTINCT key FROM translations WHERE language = 'pt' AND status = 'active'
   `);
   
@@ -15,8 +15,8 @@ export async function getBaseLanguageKeys(): Promise<Set<string>> {
  * Get all keys for a specific language
  */
 export async function getLanguageKeys(language: string): Promise<Set<string>> {
-  const result = await pgPool.query(`
-    SELECT DISTINCT key FROM translations WHERE language = $1 AND status = 'active'
+  const result = await pool.query(`
+    SELECT DISTINCT key FROM translations WHERE language = ? AND status = 'active'
   `, [language]);
   
   return new Set(result.rows.map((t: any) => t.key));
@@ -47,7 +47,7 @@ export async function validateLanguageCompleteness(language: string) {
  * Get languages that are complete (100% of keys)
  */
 export async function getCompleteLanguages(): Promise<string[]> {
-  const result = await pgPool.query(`
+  const result = await pool.query(`
     SELECT DISTINCT language FROM translations WHERE status = 'active' ORDER BY language
   `);
   
@@ -67,7 +67,7 @@ export async function getCompleteLanguages(): Promise<string[]> {
  * Get all languages with their completion status
  */
 export async function getAllLanguagesWithStatus(): Promise<Record<string, any>> {
-  const result = await pgPool.query(`
+  const result = await pool.query(`
     SELECT DISTINCT language FROM translations WHERE status = 'active' ORDER BY language
   `);
   

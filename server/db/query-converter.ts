@@ -1,96 +1,59 @@
 /**
- * Query Converter: Converte queries PostgreSQL para SQLite automaticamente
+ * Query Converter: Converte entre MySQL e SQLite automaticamente
+ * Compatibilidade máxima com ambos os bancos
  */
 
 export function convertQuery(sql: string, params: any[] = []): { sql: string; params: any[] } {
   let converted = sql;
 
-  // Não converter se for uma operação de schema (CREATE, ALTER, etc)
-  const isSchemaOp = /^\s*(CREATE|ALTER|DROP|PRAGMA)/i.test(sql);
+  // Não converter se for operação de schema
+  const isSchemaOp = /^\s*(CREATE|ALTER|DROP|PRAGMA|USE)/i.test(sql);
 
   if (!isSchemaOp) {
-    // 1. Converter $1, $2, $3... para ? (SQLite) - mantém ordem de params
+    // 1. Converter $1, $2... para ? (MySQL/SQLite compatível)
     converted = converted.replace(/\$\d+/g, () => '?');
 
-    // 2. Converter :: cast para CAST() function
-    // SELECT amount::NUMERIC → SELECT CAST(amount AS NUMERIC)
-    converted = converted.replace(/(\w+)::(\w+)/g, 'CAST($1 AS $2)');
-
-    // 3. Remover ON CONFLICT
+    // 2. Remover ON CONFLICT (MySQL usa ON DUPLICATE KEY UPDATE)
+    // Por simplicidade, vamos ignorar conflitos (INSERT OR IGNORE)
     converted = converted
       .replace(/\s+ON\s+CONFLICT[^;]*/gi, '')
-      .replace(/INSERT\s+INTO/i, 'INSERT OR IGNORE INTO');
+      .replace(/INSERT\s+INTO/i, 'INSERT IGNORE INTO');
 
-    // 4. EXCLUDED references → usar VALUES diretamente
-    converted = converted.replace(/EXCLUDED\./g, '');
+    // 3. EXCLUDED references
+    converted = converted.replace(/EXCLUDED\./g, 'VALUES(');
 
-    // 5. information_schema → sqlite_master
-    if (converted.toUpperCase().includes('INFORMATION_SCHEMA')) {
-      converted = `
-        SELECT name as table_name FROM sqlite_master 
-        WHERE type='table' AND name NOT LIKE 'sqlite_%'
-      `;
-    }
+    // 4. INTERVAL - converter para DATE arithmetic
+    // interval '1 day' → DATE_ADD(NOW(), INTERVAL 1 DAY)
+    converted = converted.replace(
+      /NOW\s*\(\s*\)\s*-\s*INTERVAL\s+'([^']+)'/gi,
+      "DATE_SUB(NOW(), INTERVAL '$1')"
+    );
+    converted = converted.replace(
+      /INTERVAL\s+'([^']+)'/gi,
+      "INTERVAL '$1'"
+    );
 
-    // 6. RETURNING → remover
-    converted = converted.replace(/\s+RETURNING\s+[^;]*/i, '');
+    // 5. EXTRACT - converter para DATE_FORMAT (compatível com ambos)
+    converted = convertExtractToDateFormat(converted);
 
-    // 7. INTERVAL (PostgreSQL) → não suporta em SQLite, usar date arithmetic
-    // interval '1 day' → '+1 day'
-    converted = converted.replace(/INTERVAL\s+'([^']+)'/gi, "'+$1'");
+    // 6. datetime() SQLite → MySQL compatible
+    converted = converted.replace(/datetime\s*\(\s*'now'\s*\)/gi, 'NOW()');
+    converted = converted.replace(/CURRENT_TIMESTAMP/gi, 'NOW()');
 
-    // 8. ARRAY syntax → não suporta em SQLite
-    // Usar string separada por vírgula
-    converted = converted.replace(/ARRAY\[/g, '').replace(/\]/g, '');
+    // 7. strftime - converter para DATE_FORMAT
+    converted = convertStrftimeToDateFormat(converted);
 
-    // 9. NOW() → CURRENT_TIMESTAMP
-    converted = converted.replace(/NOW\s*\(\s*\)/gi, 'CURRENT_TIMESTAMP');
-
-    // 10. JSON operations → texto simples em SQLite
-    // ->> operator → não funciona, usar parâmetros diretos
-    converted = converted.replace(/->>/, '->');
-
-    // 11. text search (tsvector) → não suporta, usar LIKE com wildcards
-    // @@ operator → não existe em SQLite
-    converted = converted.replace(/@@/g, 'LIKE');
-
-    // 12. SIMILAR TO → converter para LIKE ou GLOB
-    converted = converted.replace(/SIMILAR\s+TO/gi, 'LIKE');
-
-    // 13. ILIKE (case-insensitive) → LIKE (SQLite é case-insensitive para ASCII)
-    converted = converted.replace(/\bILIKE\b/gi, 'LIKE');
-
-    // 14. REGEXP (PostgreSQL) → GLOB (SQLite)
-    converted = converted.replace(/\bREGEXP\b/gi, 'GLOB');
-
-    // 15. ~, ~*, !~ (regex operators) → GLOB ou LIKE
-    converted = converted.replace(/\s~\s/g, ' GLOB ');
-    converted = converted.replace(/\s~\*\s/g, ' GLOB ');
-    converted = converted.replace(/\s!\~\s/g, ' NOT GLOB ');
-
-    // 16. EXTRACT() → usar strftime()
-    // EXTRACT(MONTH FROM date) → strftime('%m', date)
-    converted = convertExtractToStrftime(converted);
-
-    // 17. DATE_TRUNC() → usar strftime()
-    // DATE_TRUNC('month', date) → strftime('%Y-%m-01', date)
-    converted = convertDateTruncToStrftime(converted);
-
-    // 18. COALESCE com múltiplos argumentos → OK em ambos, deixar como está
-    // Já funciona igual
-
-    // 19. UNNEST() → não suporta em SQLite
-    // Deixar como está e esperar erro (feature não suportada)
-
-    // 20. DISTINCT ON → não suporta em SQLite
-    // DISTINCT ON (column) → usar DISTINCT (menos preciso, mas funciona)
-    converted = converted.replace(/DISTINCT\s+ON\s*\([^)]+\)/gi, 'DISTINCT');
-
-    // 21. String concatenation
-    // 'a' || 'b' → funciona em ambos, deixar como está
-
-    // 22. BOOLEAN tipo → SQLite usa 0/1, mas parâmetros funcionam
+    // 8. CAST - já funciona igual em ambos
     // Deixar como está
+
+    // 9. LIKE - funciona igual em ambos
+    // Deixar como está
+
+    // 10. BOOLEAN - MySQL usa TINYINT(1), SQLite usa INTEGER
+    // Deixar params como estão, MySQL converte automaticamente
+
+    // 11. Types - database agnostic na maioria dos casos
+    // TEXT, INTEGER, REAL funcionam em ambos
   }
 
   return {
@@ -100,12 +63,9 @@ export function convertQuery(sql: string, params: any[] = []): { sql: string; pa
 }
 
 /**
- * Converter EXTRACT() para strftime()
- * EXTRACT(MONTH FROM date) → strftime('%m', date)
- * EXTRACT(YEAR FROM date) → strftime('%Y', date)
- * EXTRACT(DAY FROM date) → strftime('%d', date)
+ * Converter EXTRACT() para DATE_FORMAT() (compatível com ambos)
  */
-function convertExtractToStrftime(sql: string): string {
+function convertExtractToDateFormat(sql: string): string {
   const extractRegex = /EXTRACT\s*\(\s*(\w+)\s+FROM\s+(\w+)\s*\)/gi;
 
   return sql.replace(extractRegex, (match, unit, column) => {
@@ -114,66 +74,55 @@ function convertExtractToStrftime(sql: string): string {
       MONTH: '%m',
       DAY: '%d',
       HOUR: '%H',
-      MINUTE: '%M',
-      SECOND: '%S',
-      DOW: '%w', // day of week
-      DOY: '%j', // day of year
+      MINUTE: '%i',
+      SECOND: '%s',
     };
 
     const format = unitMap[unit.toUpperCase()] || '%Y-%m-%d';
-    return `strftime('${format}', ${column})`;
+    return `DATE_FORMAT(${column}, '${format}')`;
   });
 }
 
 /**
- * Converter DATE_TRUNC() para strftime()
- * DATE_TRUNC('month', date) → strftime('%Y-%m-01', date)
- * DATE_TRUNC('year', date) → strftime('%Y-01-01', date)
- * DATE_TRUNC('day', date) → strftime('%Y-%m-%d', date)
+ * Converter strftime() SQLite para DATE_FORMAT() MySQL
  */
-function convertDateTruncToStrftime(sql: string): string {
-  const truncRegex = /DATE_TRUNC\s*\(\s*'(\w+)'\s*,\s*(\w+)\s*\)/gi;
+function convertStrftimeToDateFormat(sql: string): string {
+  // strftime('%Y-%m-%d', date) → DATE_FORMAT(date, '%Y-%m-%d')
+  const strftimeRegex = /strftime\s*\(\s*'([^']+)'\s*,\s*(\w+)\s*\)/gi;
 
-  return sql.replace(truncRegex, (match, unit, column) => {
-    const unitMap: { [key: string]: string } = {
-      year: '%Y-01-01',
-      month: '%Y-%m-01',
-      day: '%Y-%m-%d',
-      week: '%Y-%W-01', // approximate
-      hour: '%Y-%m-%d %H:00:00',
-      minute: '%Y-%m-%d %H:%M:00',
-      second: '%Y-%m-%d %H:%M:%S',
-    };
-
-    const format = unitMap[unit.toLowerCase()] || '%Y-%m-%d';
-    return `strftime('${format}', ${column})`;
+  return sql.replace(strftimeRegex, (match, format, column) => {
+    // strftime usa %Y, %m, %d, %H, %M, %S (compatível com MySQL)
+    return `DATE_FORMAT(${column}, '${format}')`;
   });
 }
 
 /**
- * Wrapper para pgPool que suporta ambos PostgreSQL e SQLite
+ * Wrapper para pool que suporta MySQL e SQLite
  */
 export function createQueryWrapper(pool: any) {
   return {
     async query(sql: string, params: any[] = []) {
-      // Se for SQLite, converter query
-      if (pool.constructor.name === 'SQLitePool' || !pool.query.toString().includes('Client')) {
-        const converted = convertQuery(sql, params);
-        try {
-          return await pool.query(converted.sql, converted.params);
-        } catch (err: any) {
-          console.error('SQLite query error:', {
-            original: sql,
-            converted: converted.sql,
-            params: converted.params,
-            error: err.message
-          });
-          throw err;
-        }
-      }
+      // Converter query
+      const converted = convertQuery(sql, params);
 
-      // PostgreSQL: usar query como está
-      return pool.query(sql, params);
+      try {
+        // MySQL 2 retorna array [rows, fields]
+        const result = await pool.query(converted.sql, converted.params);
+        
+        // Normalizar para formato consistente
+        if (Array.isArray(result)) {
+          return { rows: result[0] || [] };
+        }
+        return result;
+      } catch (err: any) {
+        console.error('Database query error:', {
+          original: sql,
+          converted: converted.sql,
+          params: converted.params,
+          error: err.message
+        });
+        throw err;
+      }
     },
 
     release() {

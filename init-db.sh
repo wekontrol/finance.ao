@@ -8,7 +8,7 @@ ENV_FILE="$APP_DIR/.env.production"
 if [ ! -f "$ENV_FILE" ] || [ ! -s "$ENV_FILE" ]; then
     if [ -z "$DATABASE_URL" ]; then
         DB_PASS=$(head -c 100 /dev/urandom | LC_ALL=C tr -cd 'A-Za-z0-9' | head -c 16)
-        DATABASE_URL="postgresql://gestor_user:$DB_PASS@localhost:5432/gestor_financeiro"
+        DATABASE_URL="mysql://gestor_user:$DB_PASS@localhost:3306/gestor_financeiro"
     fi
     
     if [ -z "$SESSION_SECRET" ]; then
@@ -25,9 +25,6 @@ ENVEOF
     chmod 600 "$ENV_FILE"
 fi
 
-# PostgreSQL vai ser iniciado automaticamente pelo systemd
-# O .env.production já contém DATABASE_URL válido
-# A aplicação vai conectar usando as variáveis de ambiente
-
+# MySQL vai ser iniciado automaticamente pelo systemd
 sleep 2
 echo "✓ BD pronta"

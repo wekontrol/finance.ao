@@ -1,14 +1,15 @@
-import pgPool from './index';
+import pool from './index';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 
 export async function initializeDatabase() {
   try {
-    // Create all tables
-    // Note: This uses pgPool from postgres directly (not the wrapper)
-    // because schema initialization only happens in production (PostgreSQL)
-    await pgPool.query(`
+    // Create all tables for MySQL
+    // MySQL syntax with maximum SQLite compatibility
+    const connection = await (pool as any).getConnection();
+    
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS families (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -266,17 +267,17 @@ export async function initializeDatabase() {
 
     // Check if admin exists (skip in development with in-memory DB)
     if (process.env.NODE_ENV === 'production') {
-      const adminResult = await pgPool.query('SELECT id FROM users WHERE username = $1', ['admin']);
+      const adminResult = await pool.query('SELECT id FROM users WHERE username = $1', ['admin']);
       
       if (adminResult.rows.length === 0) {
         // First create the admin family
-        await pgPool.query(
+        await pool.query(
           `INSERT INTO families (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
           ['fam_admin', 'Admin Family']
         );
         
         const hashedPassword = bcrypt.hashSync('admin', 10);
-        await pgPool.query(
+        await pool.query(
           `INSERT INTO users (id, username, password, name, role, avatar, status, family_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           ['u0', 'admin', hashedPassword, 'Super Admin', 'SUPER_ADMIN', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Super', 'APPROVED', 'fam_admin']
@@ -286,7 +287,7 @@ export async function initializeDatabase() {
     }
 
     // Load translations from JSON files
-    const translationsResult = await pgPool.query('SELECT COUNT(*) as count FROM translations');
+    const translationsResult = await pool.query('SELECT COUNT(*) as count FROM translations');
     if (parseInt(translationsResult.rows[0]?.count || '0') === 0) {
       const localesDir = path.join(process.cwd(), 'public', 'locales');
       
@@ -305,7 +306,7 @@ export async function initializeDatabase() {
             for (const [key, value] of Object.entries(translations)) {
               const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
               try {
-                await pgPool.query(
+                await pool.query(
                   `INSERT INTO translations (id, language, key, value, created_by, status)
                    VALUES ($1, $2, $3, $4, $5, 'active')
                    ON CONFLICT DO NOTHING`,
@@ -329,5 +330,3 @@ export async function initializeDatabase() {
     throw error;
   }
 }
-
-export default pgPool;

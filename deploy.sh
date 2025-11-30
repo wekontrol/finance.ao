@@ -46,7 +46,6 @@ sudo rm -rf node_modules dist package-lock.json 2>/dev/null || true
 echo "✓ Limpeza concluída"
 
 echo "Instalando dependências npm..."
-# Executar como root durante setup para evitar permission issues
 npm install --legacy-peer-deps 2>&1 | tail -5 || {
     echo "ERRO: npm install falhou!"
     exit 1
@@ -59,33 +58,32 @@ npm run build 2>&1 | tail -5 || true
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
 sudo chmod -R 755 $APP_DIR
 
-echo ">>> [6/7] Configurando PostgreSQL..."
-if ! command -v psql &> /dev/null; then
-    echo "Instalando PostgreSQL..."
-    sudo apt-get install -y postgresql postgresql-contrib
+echo ">>> [6/7] Configurando MySQL..."
+if ! command -v mysql &> /dev/null; then
+    echo "Instalando MySQL Server..."
+    sudo apt-get install -y mysql-server
 fi
 
-sudo systemctl start postgresql || true
-sudo systemctl enable postgresql || true
+sudo systemctl start mysql || true
+sudo systemctl enable mysql || true
 sleep 2
 
 DB_NAME="gestor_financeiro"
 DB_USER="gestor_user"
 DB_PASSWORD="$(head -c 100 /dev/urandom | LC_ALL=C tr -cd 'A-Za-z0-9' | head -c 16)"
 DB_HOST="localhost"
-DB_PORT="5432"
+DB_PORT="3306"
 
-sudo -u postgres psql <<EOF || true
+sudo mysql -u root <<EOF || true
 DROP DATABASE IF EXISTS $DB_NAME;
-DROP USER IF EXISTS $DB_USER;
-CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
-ALTER USER $DB_USER CREATEDB;
-CREATE DATABASE $DB_NAME OWNER $DB_USER;
-ALTER DATABASE $DB_NAME OWNER TO $DB_USER;
-GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+DROP USER IF EXISTS '$DB_USER'@'localhost';
+CREATE DATABASE $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
+GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
+FLUSH PRIVILEGES;
 EOF
 
-POSTGRES_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+MYSQL_URL="mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
 SESSION_SECRET="$(head -c 100 /dev/urandom | LC_ALL=C tr -cd 'A-Za-z0-9' | head -c 32)"
 
@@ -93,7 +91,7 @@ ENV_FILE="$APP_DIR/.env.production"
 sudo tee $ENV_FILE > /dev/null <<ENVEOF
 NODE_ENV=production
 PORT=5000
-DATABASE_URL=$POSTGRES_URL
+DATABASE_URL=$MYSQL_URL
 SESSION_SECRET=$SESSION_SECRET
 ENVEOF
 
@@ -102,7 +100,7 @@ sudo chown $APP_USER:$APP_USER $ENV_FILE
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "✓ PostgreSQL configurado!"
+echo "✓ MySQL configurado!"
 echo "Utilizador: $DB_USER"
 echo "Base de dados: $DB_NAME"
 echo "═══════════════════════════════════════════════════════════"
@@ -118,8 +116,8 @@ echo "Criando serviço systemd..."
 sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<'SYSTEMDEOF'
 [Unit]
 Description=Gestor Financeiro Familiar - Node.js Application
-After=network.target postgresql.service
-Wants=postgresql.service
+After=network.target mysql.service
+Wants=mysql.service
 
 [Service]
 Type=simple
