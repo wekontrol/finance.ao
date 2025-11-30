@@ -52,7 +52,8 @@ npm install --legacy-peer-deps 2>&1 | tail -5 || {
 }
 
 echo "Compilando frontend..."
-npm run build 2>&1 | tail -5 || true
+# Build already done by npm install, skip explicit build
+# npm run build 2>&1 | tail -5 || true
 
 # Após instalação, dar permissões ao nodeapp
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
