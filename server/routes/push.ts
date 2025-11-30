@@ -26,7 +26,7 @@ router.post('/subscribe', async (req: Request, res: Response) => {
     
     await pgPool.query(`
       INSERT INTO push_subscriptions (id, user_id, subscription, user_agent)
-      VALUES ($1, $2, $3, $4)
+      VALUES (?, ?, ?, ?)
       ON CONFLICT(user_id, subscription) DO UPDATE SET last_active = CURRENT_TIMESTAMP
     `, [id, userId, subscriptionJson, req.headers['user-agent'] || '']);
 
@@ -48,7 +48,7 @@ router.post('/unsubscribe', async (req: Request, res: Response) => {
   try {
     const subscriptionJson = JSON.stringify(subscription);
     await pgPool.query(`
-      DELETE FROM push_subscriptions WHERE user_id = $1 AND subscription = $2
+      DELETE FROM push_subscriptions WHERE user_id = ? AND subscription = ?
     `, [userId, subscriptionJson]);
 
     res.json({ message: 'Unsubscribed from push notifications' });
@@ -63,7 +63,7 @@ router.get('/status', async (req: Request, res: Response) => {
 
   try {
     const result = await pgPool.query(`
-      SELECT COUNT(*) as count FROM push_subscriptions WHERE user_id = $1
+      SELECT COUNT(*) as count FROM push_subscriptions WHERE user_id = ?
     `, [userId]);
     const count = result.rows[0];
 

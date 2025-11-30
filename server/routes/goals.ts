@@ -22,17 +22,17 @@ router.get('/', async (req: Request, res: Response) => {
       goalsResult = await pgPool.query(`
         SELECT g.* FROM savings_goals g
         JOIN users u ON g.user_id = u.id
-        WHERE u.family_id = $1 OR g.user_id = $2
+        WHERE u.family_id = ? OR g.user_id = ?
       `, [user.familyId, userId]);
     } else {
-      goalsResult = await pgPool.query('SELECT * FROM savings_goals WHERE user_id = $1', [userId]);
+      goalsResult = await pgPool.query('SELECT * FROM savings_goals WHERE user_id = ?', [userId]);
     }
 
     const goals = goalsResult.rows;
 
     const formattedGoals = await Promise.all(goals.map(async (g: any) => {
       const historyResult = await pgPool.query(`
-        SELECT * FROM goal_transactions WHERE goal_id = $1 ORDER BY date DESC
+        SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY date DESC
       `, [g.id]);
 
       const history = historyResult.rows;
@@ -75,10 +75,10 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     await pgPool.query(`
       INSERT INTO savings_goals (id, user_id, name, target_amount, current_amount, deadline, color, interest_rate)
-      VALUES ($1, $2, $3, $4, 0, $5, $6, $7)
+      VALUES (?, ?, ?, ?, 0, ?, ?, ?)
     `, [id, userId, name, targetAmount, deadline || null, color || '#10B981', interestRate || null]);
 
-    const goalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = $1', [id]);
+    const goalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = ?', [id]);
     const goal = goalResult.rows[0];
 
     res.status(201).json({
@@ -107,7 +107,7 @@ router.post('/:id/contribute', async (req: Request, res: Response) => {
   }
 
   try {
-    const goalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = $1', [id]);
+    const goalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = ?', [id]);
     const goal = goalResult.rows[0];
     
     if (!goal) {
@@ -119,15 +119,15 @@ router.post('/:id/contribute', async (req: Request, res: Response) => {
 
     await pgPool.query(`
       INSERT INTO goal_transactions (id, goal_id, user_id, date, amount, note)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES (?, ?, ?, ?, ?, ?)
     `, [transactionId, id, userId, new Date().toISOString().split('T')[0], amount, note || null]);
 
-    await pgPool.query('UPDATE savings_goals SET current_amount = $1 WHERE id = $2', [newAmount, id]);
+    await pgPool.query('UPDATE savings_goals SET current_amount = ? WHERE id = ?', [newAmount, id]);
 
-    const updatedGoalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = $1', [id]);
+    const updatedGoalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = ?', [id]);
     const updatedGoal = updatedGoalResult.rows[0];
     
-    const historyResult = await pgPool.query('SELECT * FROM goal_transactions WHERE goal_id = $1 ORDER BY date DESC', [id]);
+    const historyResult = await pgPool.query('SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY date DESC', [id]);
     const history = historyResult.rows;
 
     res.json({
@@ -157,21 +157,21 @@ router.put('/:id', async (req: Request, res: Response) => {
   const { name, targetAmount, deadline, color, interestRate } = req.body;
 
   try {
-    const existingResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = $1', [id]);
+    const existingResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = ?', [id]);
     if (existingResult.rows.length === 0) {
       return res.status(404).json({ error: 'Goal not found' });
     }
 
     await pgPool.query(`
       UPDATE savings_goals 
-      SET name = $1, target_amount = $2, deadline = $3, color = $4, interest_rate = $5
-      WHERE id = $6
+      SET name = ?, target_amount = ?, deadline = ?, color = ?, interest_rate = ?
+      WHERE id = ?
     `, [name, targetAmount, deadline, color, interestRate, id]);
 
-    const goalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = $1', [id]);
+    const goalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = ?', [id]);
     const goal = goalResult.rows[0];
     
-    const historyResult = await pgPool.query('SELECT * FROM goal_transactions WHERE goal_id = $1 ORDER BY date DESC', [id]);
+    const historyResult = await pgPool.query('SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY date DESC', [id]);
     const history = historyResult.rows;
 
     res.json({
@@ -205,7 +205,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const existingResult = await pgPool.query(`
       SELECT g.*, u.family_id FROM savings_goals g 
       JOIN users u ON g.user_id = u.id 
-      WHERE g.id = $1
+      WHERE g.id = ?
     `, [id]);
     
     const existing = existingResult.rows[0];
@@ -221,8 +221,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorized to delete this goal' });
     }
 
-    await pgPool.query('DELETE FROM goal_transactions WHERE goal_id = $1', [id]);
-    await pgPool.query('DELETE FROM savings_goals WHERE id = $1', [id]);
+    await pgPool.query('DELETE FROM goal_transactions WHERE goal_id = ?', [id]);
+    await pgPool.query('DELETE FROM savings_goals WHERE id = ?', [id]);
     
     res.json({ message: 'Goal deleted' });
   } catch (error) {

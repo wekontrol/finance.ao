@@ -20,7 +20,7 @@ router.get('/tasks', async (req: Request, res: Response) => {
     SELECT t.*, u.name as assigned_to_name
     FROM family_tasks t
     LEFT JOIN users u ON t.assigned_to = u.id
-    WHERE t.family_id = $1
+    WHERE t.family_id = ?
     ORDER BY t.due_date ASC
   `, [user.familyId]);
 
@@ -48,14 +48,14 @@ router.post('/tasks', async (req: Request, res: Response) => {
   
   await pgPool.query(`
     INSERT INTO family_tasks (id, family_id, description, assigned_to, due_date)
-    VALUES ($1, $2, $3, $4, $5)
+    VALUES (?, ?, ?, ?, ?)
   `, [id, user.familyId, description, assignedTo || null, dueDate || null]);
 
   const taskResult = await pgPool.query(`
     SELECT t.*, u.name as assigned_to_name
     FROM family_tasks t
     LEFT JOIN users u ON t.assigned_to = u.id
-    WHERE t.id = $1
+    WHERE t.id = ?
   `, [id]);
   
   const task = taskResult.rows[0];
@@ -75,7 +75,7 @@ router.put('/tasks/:id', async (req: Request, res: Response) => {
   const user = req.session.user;
   const { description, assignedTo, isCompleted, dueDate } = req.body;
 
-  const existingResult = await pgPool.query('SELECT * FROM family_tasks WHERE id = $1', [id]);
+  const existingResult = await pgPool.query('SELECT * FROM family_tasks WHERE id = ?', [id]);
   const existing = existingResult.rows[0];
   
   if (!existing) {
@@ -95,15 +95,15 @@ router.put('/tasks/:id', async (req: Request, res: Response) => {
 
   await pgPool.query(`
     UPDATE family_tasks 
-    SET description = $1, assigned_to = $2, is_completed = $3, due_date = $4
-    WHERE id = $5
+    SET description = ?, assigned_to = ?, is_completed = ?, due_date = ?
+    WHERE id = ?
   `, [newValues.description, newValues.assignedTo, newValues.isCompleted, newValues.dueDate, id]);
 
   const taskResult = await pgPool.query(`
     SELECT t.*, u.name as assigned_to_name
     FROM family_tasks t
     LEFT JOIN users u ON t.assigned_to = u.id
-    WHERE t.id = $1
+    WHERE t.id = ?
   `, [id]);
   
   const task = taskResult.rows[0];
@@ -122,7 +122,7 @@ router.delete('/tasks/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.session.user;
 
-  const existingResult = await pgPool.query('SELECT * FROM family_tasks WHERE id = $1', [id]);
+  const existingResult = await pgPool.query('SELECT * FROM family_tasks WHERE id = ?', [id]);
   const existing = existingResult.rows[0];
   
   if (!existing) {
@@ -133,7 +133,7 @@ router.delete('/tasks/:id', async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  await pgPool.query('DELETE FROM family_tasks WHERE id = $1', [id]);
+  await pgPool.query('DELETE FROM family_tasks WHERE id = ?', [id]);
   res.json({ message: 'Task deleted' });
 });
 
@@ -141,7 +141,7 @@ router.get('/events', async (req: Request, res: Response) => {
   const user = req.session.user;
 
   const result = await pgPool.query(`
-    SELECT * FROM family_events WHERE family_id = $1 ORDER BY date ASC
+    SELECT * FROM family_events WHERE family_id = ? ORDER BY date ASC
   `, [user.familyId]);
 
   const formattedEvents = result.rows.map((e: any) => ({
@@ -167,10 +167,10 @@ router.post('/events', async (req: Request, res: Response) => {
   
   await pgPool.query(`
     INSERT INTO family_events (id, family_id, title, date, type, description)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    VALUES (?, ?, ?, ?, ?, ?)
   `, [id, user.familyId, title, date, type || 'general', description || null]);
 
-  const eventResult = await pgPool.query('SELECT * FROM family_events WHERE id = $1', [id]);
+  const eventResult = await pgPool.query('SELECT * FROM family_events WHERE id = ?', [id]);
   const event = eventResult.rows[0];
   
   res.status(201).json({
@@ -187,7 +187,7 @@ router.put('/events/:id', async (req: Request, res: Response) => {
   const user = req.session.user;
   const { title, date, type, description } = req.body;
 
-  const existingResult = await pgPool.query('SELECT * FROM family_events WHERE id = $1', [id]);
+  const existingResult = await pgPool.query('SELECT * FROM family_events WHERE id = ?', [id]);
   const existing = existingResult.rows[0];
   
   if (!existing) {
@@ -207,11 +207,11 @@ router.put('/events/:id', async (req: Request, res: Response) => {
 
   await pgPool.query(`
     UPDATE family_events 
-    SET title = $1, date = $2, type = $3, description = $4
-    WHERE id = $5
+    SET title = ?, date = ?, type = ?, description = ?
+    WHERE id = ?
   `, [newValues.title, newValues.date, newValues.type, newValues.description, id]);
 
-  const eventResult = await pgPool.query('SELECT * FROM family_events WHERE id = $1', [id]);
+  const eventResult = await pgPool.query('SELECT * FROM family_events WHERE id = ?', [id]);
   const event = eventResult.rows[0];
   
   res.json({
@@ -227,7 +227,7 @@ router.delete('/events/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.session.user;
 
-  const existingResult = await pgPool.query('SELECT * FROM family_events WHERE id = $1', [id]);
+  const existingResult = await pgPool.query('SELECT * FROM family_events WHERE id = ?', [id]);
   const existing = existingResult.rows[0];
   
   if (!existing) {
@@ -238,7 +238,7 @@ router.delete('/events/:id', async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  await pgPool.query('DELETE FROM family_events WHERE id = $1', [id]);
+  await pgPool.query('DELETE FROM family_events WHERE id = ?', [id]);
   res.json({ message: 'Event deleted' });
 });
 

@@ -24,7 +24,7 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     await pgPool.query(`
       INSERT INTO app_settings (key, value) 
-      VALUES ($1, $2)
+      VALUES (?, ?)
       ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value
     `, [key, value]);
     res.json({ success: true });
@@ -90,22 +90,22 @@ router.post('/api-configs', async (req: Request, res: Response) => {
 
     if (id) {
       console.log('[POST /api-configs] Updating config:', id);
-      await pgPool.query(`UPDATE api_configurations SET api_key = $1, model = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3`, [apiKey, model || null, id]);
+      await pgPool.query(`UPDATE api_configurations SET api_key = ?, model = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [apiKey, model || null, id]);
       console.log('[POST /api-configs] Update successful');
     } else {
       // Check if provider already exists
-      const existingResult = await pgPool.query(`SELECT id FROM api_configurations WHERE provider = $1`, [provider]);
+      const existingResult = await pgPool.query(`SELECT id FROM api_configurations WHERE provider = ?`, [provider]);
       const existing = existingResult.rows[0] as { id: string } | undefined;
       
       if (existing) {
         // Update existing provider
-        await pgPool.query(`UPDATE api_configurations SET api_key = $1, model = $2, updated_at = CURRENT_TIMESTAMP WHERE provider = $3`, [apiKey, model || null, provider]);
+        await pgPool.query(`UPDATE api_configurations SET api_key = ?, model = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ?`, [apiKey, model || null, provider]);
         console.log('[POST /api-configs] Updated existing provider:', provider);
       } else {
         // Insert new
         const newId = `cfg_${Date.now()}`;
         console.log('[POST /api-configs] Inserting new config:', newId, 'provider:', provider);
-        await pgPool.query(`INSERT INTO api_configurations (id, provider, api_key, model) VALUES ($1, $2, $3, $4)`, [newId, provider, apiKey, model || null]);
+        await pgPool.query(`INSERT INTO api_configurations (id, provider, api_key, model) VALUES (?, ?, ?, ?)`, [newId, provider, apiKey, model || null]);
         console.log('[POST /api-configs] Insert successful');
       }
     }
@@ -122,7 +122,7 @@ router.get('/api-config/:provider', async (req: Request, res: Response) => {
   try {
     const { provider } = req.params;
     console.log('[GET /api-config] Provider:', provider);
-    const result = await pgPool.query(`SELECT api_key, model FROM api_configurations WHERE provider = $1`, [provider]);
+    const result = await pgPool.query(`SELECT api_key, model FROM api_configurations WHERE provider = ?`, [provider]);
     const config = result.rows[0] as { api_key: string; model: string } | undefined;
     if (config) {
       console.log('[GET /api-config] Found config for', provider);
@@ -144,7 +144,7 @@ router.delete('/api-configs/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     console.log('[DELETE /api-configs] Deleting:', id);
-    await pgPool.query(`DELETE FROM api_configurations WHERE id = $1`, [id]);
+    await pgPool.query(`DELETE FROM api_configurations WHERE id = ?`, [id]);
     console.log('[DELETE /api-configs] Delete successful');
     res.json({ success: true });
   } catch (error: any) {
@@ -158,7 +158,7 @@ router.delete('/api-config/:provider', async (req: Request, res: Response) => {
   const { provider } = req.params;
   console.log('[DELETE /api-config/:provider] Provider:', provider);
   try {
-    await pgPool.query(`DELETE FROM api_configurations WHERE provider = $1`, [provider]);
+    await pgPool.query(`DELETE FROM api_configurations WHERE provider = ?`, [provider]);
     console.log('[DELETE /api-config/:provider] Deleted provider:', provider);
     res.json({ success: true });
   } catch (error: any) {
@@ -187,7 +187,7 @@ router.post('/default-ai-provider', async (req: Request, res: Response) => {
     // Unset all others
     await pgPool.query(`UPDATE api_configurations SET is_default = 0`);
     // Set this one
-    await pgPool.query(`UPDATE api_configurations SET is_default = 1 WHERE provider = $1`, [provider]);
+    await pgPool.query(`UPDATE api_configurations SET is_default = 1 WHERE provider = ?`, [provider]);
     console.log('[POST /default-ai-provider] Set successfully');
     res.json({ success: true });
   } catch (error: any) {
@@ -201,7 +201,7 @@ router.get('/default-currency-provider', async (req: Request, res: Response) => 
   const userId = req.session?.userId;
   try {
     if (userId) {
-      const result = await pgPool.query(`SELECT currency_provider_preference FROM users WHERE id = $1`, [userId]);
+      const result = await pgPool.query(`SELECT currency_provider_preference FROM users WHERE id = ?`, [userId]);
       const user = result.rows[0] as { currency_provider_preference: string } | undefined;
       res.json({ provider: user?.currency_provider_preference || 'BNA' });
     } else {
@@ -228,7 +228,7 @@ router.post('/default-currency-provider', async (req: Request, res: Response) =>
   }
 
   try {
-    await pgPool.query(`UPDATE users SET currency_provider_preference = $1 WHERE id = $2`, [provider, userId]);
+    await pgPool.query(`UPDATE users SET currency_provider_preference = ? WHERE id = ?`, [provider, userId]);
     console.log('[POST /default-currency-provider] Set successfully');
     res.json({ success: true, provider });
   } catch (error: any) {

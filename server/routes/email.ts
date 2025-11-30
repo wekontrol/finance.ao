@@ -28,7 +28,7 @@ router.post('/test', async (req: Request, res: Response) => {
     const userId = req.session!.userId as string;
 
     // Get user email from database
-    const result = await pgPool.query('SELECT email FROM users WHERE id = $1', [userId]);
+    const result = await pgPool.query('SELECT email FROM users WHERE id = ?', [userId]);
     const userRecord = result.rows[0];
     
     if (!userRecord || !userRecord.email) {
@@ -60,12 +60,12 @@ router.post('/test', async (req: Request, res: Response) => {
 router.get('/config', async (req: Request, res: Response) => {
   try {
     const userId = req.session!.userId as string;
-    const result = await pgPool.query('SELECT email FROM users WHERE id = $1', [userId]);
+    const result = await pgPool.query('SELECT email FROM users WHERE id = ?', [userId]);
     const userRecord = result.rows[0];
 
     res.json({
       hasEmail: !!userRecord?.email,
-      email: userRecord?.email ? userRecord.email.replace(/(.{2})(.*)(.{2})/, '$1***$3') : null
+      email: userRecord?.email ? userRecord.email.replace(/(.{2})(.*)(.{2})/, '?***?') : null
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

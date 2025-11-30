@@ -26,13 +26,13 @@ router.get('/', async (req: Request, res: Response) => {
   } else if (user.role === 'MANAGER') {
     const result = await pgPool.query(`
       SELECT id, username, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-      FROM users WHERE family_id = $1
+      FROM users WHERE family_id = ?
     `, [user.familyId]);
     users = result.rows;
   } else {
     const result = await pgPool.query(`
       SELECT id, username, name, role, avatar, status, family_id
-      FROM users WHERE id = $1
+      FROM users WHERE id = ?
     `, [req.session.userId]);
     users = result.rows;
   }
@@ -65,7 +65,7 @@ router.post('/', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
-  const existingResult = await pgPool.query('SELECT id FROM users WHERE username = $1', [username]);
+  const existingResult = await pgPool.query('SELECT id FROM users WHERE username = ?', [username]);
   const existingUser = existingResult.rows[0];
   if (existingUser) {
     return res.status(409).json({ error: 'Username already exists' });
@@ -99,7 +99,7 @@ router.post('/', async (req: Request, res: Response) => {
 
   await pgPool.query(`
     INSERT INTO users (id, username, password, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     id,
     username,
@@ -118,13 +118,13 @@ router.post('/', async (req: Request, res: Response) => {
     const budgetId = `bl${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
     await pgPool.query(`
       INSERT INTO budget_limits (id, user_id, category, limit_amount, is_default)
-      VALUES ($1, $2, $3, $4, 1)
+      VALUES (?, ?, ?, ?, 1)
     `, [budgetId, id, budget.category, budget.limit]);
   }
 
   const userResult = await pgPool.query(`
     SELECT id, username, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-    FROM users WHERE id = $1
+    FROM users WHERE id = ?
   `, [id]);
   const user = userResult.rows[0];
 
@@ -156,13 +156,13 @@ router.put('/:id', async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Not authorized' });
   }
 
-  const existingResult = await pgPool.query('SELECT * FROM users WHERE id = $1', [id]);
+  const existingResult = await pgPool.query('SELECT * FROM users WHERE id = ?', [id]);
   const existing = existingResult.rows[0];
   if (!existing) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  let updateQuery = 'UPDATE users SET name = $1';
+  let updateQuery = 'UPDATE users SET name = ?';
   let params: any[] = [name || existing.name];
   let paramIndex = 2;
 
@@ -204,7 +204,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
   const userResult = await pgPool.query(`
     SELECT id, username, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-    FROM users WHERE id = $1
+    FROM users WHERE id = ?
   `, [id]);
   const user = userResult.rows[0];
 
@@ -234,14 +234,14 @@ router.delete('/:id', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Cannot delete your own account' });
   }
 
-  const existingResult = await pgPool.query('SELECT * FROM users WHERE id = $1', [id]);
+  const existingResult = await pgPool.query('SELECT * FROM users WHERE id = ?', [id]);
   const existing = existingResult.rows[0];
   if (!existing) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  await pgPool.query('DELETE FROM budget_limits WHERE user_id = $1', [id]);
-  await pgPool.query('DELETE FROM users WHERE id = $1', [id]);
+  await pgPool.query('DELETE FROM budget_limits WHERE user_id = ?', [id]);
+  await pgPool.query('DELETE FROM users WHERE id = ?', [id]);
   res.json({ message: 'User deleted' });
 });
 

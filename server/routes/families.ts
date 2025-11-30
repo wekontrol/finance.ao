@@ -49,7 +49,7 @@ router.delete('/:id', requireAuth, requireSuperAdmin, async (req: Request, res: 
   }
 
   // Check if family exists
-  const familyResult = await pgPool.query('SELECT id FROM families WHERE id = $1', [id]);
+  const familyResult = await pgPool.query('SELECT id FROM families WHERE id = ?', [id]);
   if (familyResult.rows.length === 0) {
     return res.status(404).json({ error: 'Family not found' });
   }
@@ -60,32 +60,32 @@ router.delete('/:id', requireAuth, requireSuperAdmin, async (req: Request, res: 
     await client.query('BEGIN');
 
     // Get all user IDs from the family
-    const usersResult = await client.query('SELECT id FROM users WHERE family_id = $1', [id]);
+    const usersResult = await client.query('SELECT id FROM users WHERE family_id = ?', [id]);
     const userIds = usersResult.rows.map((u: { id: string }) => u.id);
 
     if (userIds.length > 0) {
       // Delete data linked to users
       await client.query(
-        `DELETE FROM transactions WHERE user_id = ANY($1)`,
+        `DELETE FROM transactions WHERE user_id = ANY(?)`,
         [userIds]
       );
       await client.query(
-        `DELETE FROM savings_goals WHERE user_id = ANY($1)`,
+        `DELETE FROM savings_goals WHERE user_id = ANY(?)`,
         [userIds]
       );
       await client.query(
-        `DELETE FROM budget_limits WHERE user_id = ANY($1)`,
+        `DELETE FROM budget_limits WHERE user_id = ANY(?)`,
         [userIds]
       );
     }
 
     // Delete data linked to the family directly
-    await client.query('DELETE FROM family_tasks WHERE family_id = $1', [id]);
-    await client.query('DELETE FROM family_events WHERE family_id = $1', [id]);
+    await client.query('DELETE FROM family_tasks WHERE family_id = ?', [id]);
+    await client.query('DELETE FROM family_events WHERE family_id = ?', [id]);
 
     // Finally, delete users and the family itself
-    await client.query('DELETE FROM users WHERE family_id = $1', [id]);
-    await client.query('DELETE FROM families WHERE id = $1', [id]);
+    await client.query('DELETE FROM users WHERE family_id = ?', [id]);
+    await client.query('DELETE FROM families WHERE id = ?', [id]);
 
     await client.query('COMMIT');
     

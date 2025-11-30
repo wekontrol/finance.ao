@@ -30,16 +30,16 @@ router.get('/preferences', async (req: Request, res: Response) => {
         const id = `np${Date.now()}`;
         await pgPool.query(`
           INSERT INTO notification_preferences (id, is_global, budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications)
-          VALUES ($1, 1, 1, 1, 1, 1, 1, 1)
+          VALUES (?, 1, 1, 1, 1, 1, 1, 1)
         `, [id]);
-        const createdResult = await pgPool.query(`SELECT * FROM notification_preferences WHERE id = $1`, [id]);
+        const createdResult = await pgPool.query(`SELECT * FROM notification_preferences WHERE id = ?`, [id]);
         return res.json(createdResult.rows[0]);
       }
       res.json(global);
     } else {
       // Get user-specific preferences
       const prefsResult = await pgPool.query(`
-        SELECT * FROM notification_preferences WHERE user_id = $1 AND is_global = 0
+        SELECT * FROM notification_preferences WHERE user_id = ? AND is_global = 0
       `, [userId]);
       const prefs = prefsResult.rows[0];
       
@@ -47,9 +47,9 @@ router.get('/preferences', async (req: Request, res: Response) => {
         const id = `np${Date.now()}`;
         await pgPool.query(`
           INSERT INTO notification_preferences (id, user_id, is_global, budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications)
-          VALUES ($1, $2, 0, 1, 1, 1, 1, 1, 1)
+          VALUES (?, ?, 0, 1, 1, 1, 1, 1, 1)
         `, [id, userId]);
-        const createdResult = await pgPool.query(`SELECT * FROM notification_preferences WHERE id = $1`, [id]);
+        const createdResult = await pgPool.query(`SELECT * FROM notification_preferences WHERE id = ?`, [id]);
         return res.json(createdResult.rows[0]);
       }
       res.json(prefs);
@@ -72,15 +72,15 @@ router.post('/preferences', async (req: Request, res: Response) => {
       // Update global preferences
       await pgPool.query(`
         UPDATE notification_preferences 
-        SET budget_alerts = $1, subscription_alerts = $2, financial_tips = $3, goal_progress = $4, email_notifications = $5, push_notifications = $6
+        SET budget_alerts = ?, subscription_alerts = ?, financial_tips = ?, goal_progress = ?, email_notifications = ?, push_notifications = ?
         WHERE is_global = 1
       `, [budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications]);
     } else {
       // Update user-specific preferences
       await pgPool.query(`
         UPDATE notification_preferences 
-        SET budget_alerts = $1, subscription_alerts = $2, financial_tips = $3, goal_progress = $4, email_notifications = $5, push_notifications = $6
-        WHERE user_id = $7 AND is_global = 0
+        SET budget_alerts = ?, subscription_alerts = ?, financial_tips = ?, goal_progress = ?, email_notifications = ?, push_notifications = ?
+        WHERE user_id = ? AND is_global = 0
       `, [budget_alerts, subscription_alerts, financial_tips, goal_progress, email_notifications, push_notifications, userId]);
     }
 

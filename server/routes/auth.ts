@@ -86,7 +86,7 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 
   try {
-    const existingResult = await pgPool.query('SELECT id FROM users WHERE username = $1', [username]);
+    const existingResult = await pgPool.query('SELECT id FROM users WHERE username = ?', [username]);
     if (existingResult.rows[0]) {
       return res.status(409).json({ error: 'Username already exists' });
     }
@@ -116,14 +116,14 @@ router.post('/register', async (req: Request, res: Response) => {
 
     // Create family
     await pgPool.query(
-      `INSERT INTO families (id, name) VALUES ($1, $2)`,
+      `INSERT INTO families (id, name) VALUES (?, ?)`,
       [familyId, familyName]
     );
 
     // Create user
     await pgPool.query(
       `INSERT INTO users (id, username, password, name, email, role, avatar, status, family_id, security_question, security_answer)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [userId, username, hashedPassword, name, email, 'ADMIN', 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username, 'PENDING', familyId, securityQuestion, bcrypt.hashSync(securityAnswer, 10)]
     );
 
@@ -132,7 +132,7 @@ router.post('/register', async (req: Request, res: Response) => {
       const budgetId = `b${Date.now()}${Math.random()}`;
       await pgPool.query(
         `INSERT INTO budget_limits (id, user_id, category, limit_amount, is_default)
-         VALUES ($1, $2, $3, $4, $5)`,
+         VALUES (?, ?, ?, ?, ?)`,
         [budgetId, userId, budget.category, budget.limit, true]
       );
     }
@@ -152,7 +152,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
 
   try {
     const result = await pgPool.query(
-      'SELECT id, security_answer FROM users WHERE username = $1',
+      'SELECT id, security_answer FROM users WHERE username = ?',
       [username]
     );
 
@@ -164,7 +164,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const tempPassword = Math.random().toString(36).slice(-8);
     const hashedPassword = bcrypt.hashSync(tempPassword, 10);
 
-    await pgPool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
+    await pgPool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, user.id]);
 
     res.json({ tempPassword, message: 'Temporary password sent' });
   } catch (error: any) {
@@ -179,7 +179,7 @@ router.get('/me', async (req: Request, res: Response) => {
 
   try {
     const result = await pgPool.query(
-      'SELECT id, username, name, role, avatar, status, family_id FROM users WHERE id = $1',
+      'SELECT id, username, name, role, avatar, status, family_id FROM users WHERE id = ?',
       [req.session.userId]
     );
 

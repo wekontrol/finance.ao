@@ -229,7 +229,7 @@ router.post('/import', requireAuth, async (req: Request, res: Response) => {
 
         await pgPool.query(
           `INSERT INTO transactions (id, user_id, date, description, category, type, amount, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
           [
             `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             userId,
@@ -260,7 +260,7 @@ router.post('/import', requireAuth, async (req: Request, res: Response) => {
 
 router.get('/logo', async (req: Request, res: Response) => {
   try {
-    const result = await pgPool.query('SELECT value FROM app_settings WHERE key = $1', ['app_logo']);
+    const result = await pgPool.query('SELECT value FROM app_settings WHERE key = ?', ['app_logo']);
     const logo = result.rows[0];
     if (logo && logo.value) {
       res.json({ logo: logo.value });
@@ -285,7 +285,7 @@ router.post('/logo', async (req: Request, res: Response) => {
   try {
     await pgPool.query(
       `INSERT INTO app_settings (key, value)
-       VALUES ($1, $2)
+       VALUES (?, ?)
        ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`,
       ['app_logo', logo]
     );

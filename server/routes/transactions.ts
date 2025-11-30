@@ -53,7 +53,7 @@ export async function processRecurringTransactions() {
 
   const dueResult = await pgPool.query(`
     SELECT * FROM transactions
-    WHERE is_recurring = 1 AND next_due_date IS NOT NULL AND next_due_date <= $1
+    WHERE is_recurring = 1 AND next_due_date IS NOT NULL AND next_due_date <= ?
   `, [today]);
   
   const dueTransactions = dueResult.rows;
@@ -66,12 +66,12 @@ export async function processRecurringTransactions() {
     const newId = uuidv4();
     await pgPool.query(`
       INSERT INTO transactions (id, user_id, description, amount, date, category, type, is_recurring, frequency)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 0, NULL)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL)
     `, [newId, t.user_id, t.description, t.amount, today, t.category, t.type]);
 
     const nextDueDate = calculateNextDueDate(t.next_due_date, t.frequency);
     await pgPool.query(`
-      UPDATE transactions SET next_due_date = $1 WHERE id = $2
+      UPDATE transactions SET next_due_date = ? WHERE id = ?
     `, [nextDueDate, t.id]);
 
     console.log(`[Recurring] Processada transação ${t.id}. Nova transação ${newId} criada. Próximo vencimento: ${nextDueDate}`);
@@ -91,7 +91,7 @@ async function canViewUserTransactions(viewerId: string, viewerRole: string, vie
   
   if (viewerRole === 'MANAGER') {
     const result = await pgPool.query(`
-      SELECT id, family_id, birth_date, allow_parent_view FROM users WHERE id = $1
+      SELECT id, family_id, birth_date, allow_parent_view FROM users WHERE id = ?
     `, [targetUserId]);
     
     const targetUser = result.rows[0];
@@ -127,7 +127,7 @@ router.get('/', async (req: Request, res: Response) => {
       SELECT t.*, u.name as user_name
       FROM transactions t
       LEFT JOIN users u ON t.user_id = u.id
-      WHERE u.family_id = $1
+      WHERE u.family_id = ?
       ORDER BY t.date DESC
     `, [user.familyId]);
 
@@ -146,7 +146,7 @@ router.get('/', async (req: Request, res: Response) => {
       SELECT t.*, u.name as user_name 
       FROM transactions t
       LEFT JOIN users u ON t.user_id = u.id
-      WHERE t.user_id = $1 
+      WHERE t.user_id = ? 
       ORDER BY t.date DESC
     `, [userId]);
     transactions = result.rows;
@@ -187,10 +187,10 @@ router.post('/', async (req: Request, res: Response) => {
 
   await pgPool.query(`
     INSERT INTO transactions (id, user_id, description, amount, date, category, type, is_recurring, frequency, next_due_date)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [id, userId, description, amount, date, category, type, isRecurring ? true : false, frequency || null, nextDueDate]);
 
-  const result = await pgPool.query('SELECT * FROM transactions WHERE id = $1', [id]);
+  const result = await pgPool.query('SELECT * FROM transactions WHERE id = ?', [id]);
   const transaction = result.rows[0];
   
   res.status(201).json({
@@ -213,7 +213,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   const user = req.session.user;
   const { description, amount, date, category, type, isRecurring, frequency } = req.body;
 
-  const existingResult = await pgPool.query('SELECT t.*, u.family_id FROM transactions t JOIN users u ON t.user_id = u.id WHERE t.id = $1', [id]);
+  const existingResult = await pgPool.query('SELECT t.*, u.family_id FROM transactions t JOIN users u ON t.user_id = u.id WHERE t.id = ?', [id]);
   const existing = existingResult.rows[0];
   
   if (!existing) {
@@ -228,11 +228,11 @@ router.put('/:id', async (req: Request, res: Response) => {
 
   await pgPool.query(`
     UPDATE transactions 
-    SET description = $1, amount = $2, date = $3, category = $4, type = $5, is_recurring = $6, frequency = $7
-    WHERE id = $8
+    SET description = ?, amount = ?, date = ?, category = ?, type = ?, is_recurring = ?, frequency = ?
+    WHERE id = ?
   `, [description, amount, date, category, type, isRecurring ? true : false, frequency || null, id]);
 
-  const result = await pgPool.query('SELECT * FROM transactions WHERE id = $1', [id]);
+  const result = await pgPool.query('SELECT * FROM transactions WHERE id = ?', [id]);
   const transaction = result.rows[0];
   
   res.json({
@@ -253,7 +253,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const user = req.session.user;
 
-  const existingResult = await pgPool.query('SELECT t.*, u.family_id FROM transactions t JOIN users u ON t.user_id = u.id WHERE t.id = $1', [id]);
+  const existingResult = await pgPool.query('SELECT t.*, u.family_id FROM transactions t JOIN users u ON t.user_id = u.id WHERE t.id = ?', [id]);
   const existing = existingResult.rows[0];
   
   if (!existing) {
@@ -266,7 +266,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Not authorized to delete this transaction' });
   }
 
-  await pgPool.query('DELETE FROM transactions WHERE id = $1', [id]);
+  await pgPool.query('DELETE FROM transactions WHERE id = ?', [id]);
   res.json({ message: 'Transaction deleted' });
 });
 

@@ -57,7 +57,7 @@ router.get('/language/:language', async (req: Request, res: Response) => {
     const { language } = req.params;
     
     const translationsResult = await pgPool.query(`
-      SELECT key, value FROM translations WHERE language = $1 AND status = 'active'
+      SELECT key, value FROM translations WHERE language = ? AND status = 'active'
       ORDER BY key
     `, [language]);
 
@@ -102,9 +102,9 @@ router.post('/', requireTranslatorOrAdmin, async (req: Request, res: Response) =
   try {
     await pgPool.query(`
       INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
-      VALUES ($1, $2, $3, $4, $5, NOW(), 'active')
+      VALUES (?, ?, ?, ?, ?, NOW(), 'active')
       ON CONFLICT (language, key) DO UPDATE SET
-        value = $3,
+        value = ?,
         updated_at = NOW(),
         status = 'active'
     `, [id, language, key, value, userId]);
@@ -129,14 +129,14 @@ router.post('/language/add', requireTranslatorOrAdmin, async (req: Request, res:
     // If baseLanguage provided, copy translations from base
     if (baseLanguage) {
       const baseResult = await pgPool.query(`
-        SELECT key, value FROM translations WHERE language = $1 AND status = 'active'
+        SELECT key, value FROM translations WHERE language = ? AND status = 'active'
       `, [baseLanguage]);
 
       for (const t of baseResult.rows) {
         const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
         await pgPool.query(`
           INSERT INTO translations (id, language, key, value, created_by, status)
-          VALUES ($1, $2, $3, $4, $5, 'active')
+          VALUES (?, ?, ?, ?, ?, 'active')
           ON CONFLICT (language, key) DO NOTHING
         `, [id, language, t.key, t.value, userId]);
       }
@@ -197,7 +197,7 @@ router.post('/import', requireTranslatorOrAdmin, async (req: Request, res: Respo
         const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
         await pgPool.query(`
           INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
-          VALUES ($1, $2, $3, $4, $5, NOW(), 'active')
+          VALUES (?, ?, ?, ?, ?, NOW(), 'active')
           ON CONFLICT (language, key) DO UPDATE SET
             value = EXCLUDED.value,
             created_by = EXCLUDED.created_by,
@@ -232,7 +232,7 @@ router.get('/stats', requireTranslatorOrAdmin, async (req: Request, res: Respons
       
       const translatedResult = await pgPool.query(`
         SELECT COUNT(*) as count FROM translations 
-        WHERE language = $1 AND status = 'active' AND value IS NOT NULL AND value != ''
+        WHERE language = ? AND status = 'active' AND value IS NOT NULL AND value != ''
       `, [lang]);
       const translated = parseInt(translatedResult.rows[0]?.count) || 0;
 
@@ -353,7 +353,7 @@ router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request,
   try {
     // Get old value for history
     const existingResult = await pgPool.query(
-      'SELECT id, value FROM translations WHERE language = $1 AND key = $2 AND status = $3',
+      'SELECT id, value FROM translations WHERE language = ? AND key = ? AND status = ?',
       [language, key, 'active']
     );
     const existing = existingResult.rows[0];
@@ -364,9 +364,9 @@ router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request,
     // Save new translation
     await pgPool.query(`
       INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
-      VALUES ($1, $2, $3, $4, $5, NOW(), 'active')
+      VALUES (?, ?, ?, ?, ?, NOW(), 'active')
       ON CONFLICT (language, key) DO UPDATE SET
-        value = $3,
+        value = ?,
         updated_at = NOW(),
         status = 'active'
     `, [translationId, language, key, value, userId]);
@@ -376,7 +376,7 @@ router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request,
       const historyId = `th${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
       await pgPool.query(`
         INSERT INTO translation_history (id, translation_id, language, key, old_value, new_value, changed_by, change_type)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, [historyId, translationId, language, key, oldValue, value, userId, oldValue ? 'update' : 'create']);
     }
 

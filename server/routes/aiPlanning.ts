@@ -84,7 +84,7 @@ router.get('/analyze', async (req: Request, res: Response) => {
       try {
         const cacheResult = await pgPool.query(`
           SELECT analysis_data FROM ai_analysis_cache
-          WHERE user_id = $1 AND month = $2 AND expires_at > NOW()
+          WHERE user_id = ? AND month = ? AND expires_at > NOW()
         `, [userId, currentMonth]);
 
         if (cacheResult.rows.length > 0) {
@@ -99,7 +99,7 @@ router.get('/analyze', async (req: Request, res: Response) => {
     const transactionsResult = await pgPool.query(`
       SELECT id, description, amount, date, category, type
       FROM transactions
-      WHERE user_id = $1
+      WHERE user_id = ?
       ORDER BY date DESC
     `, [userId]);
 
@@ -132,7 +132,7 @@ router.get('/analyze', async (req: Request, res: Response) => {
     const budgetsResult = await pgPool.query(`
       SELECT DISTINCT category, limit_amount as "limit"
       FROM budget_limits
-      WHERE user_id = $1
+      WHERE user_id = ?
     `, [userId]);
 
     const budgets: Array<{ category: string; limit: number }> = budgetsResult.rows.map(row => ({
@@ -145,7 +145,7 @@ router.get('/analyze', async (req: Request, res: Response) => {
         category,
         SUM(CASE WHEN type = 'DESPESA' THEN amount ELSE 0 END) as spent
       FROM transactions
-      WHERE user_id = $1 AND type = 'DESPESA' AND date LIKE $2
+      WHERE user_id = ? AND type = 'DESPESA' AND date LIKE ?
       GROUP BY category
     `, [userId, `${currentMonth}%`]);
 
@@ -165,7 +165,7 @@ router.get('/analyze', async (req: Request, res: Response) => {
     const goalsResult = await pgPool.query(`
       SELECT id, name, target_amount, current_amount, deadline
       FROM savings_goals
-      WHERE user_id = $1
+      WHERE user_id = ?
     `, [userId]);
 
     const goals: GoalData[] = goalsResult.rows.map(row => ({
@@ -179,7 +179,7 @@ router.get('/analyze', async (req: Request, res: Response) => {
         date,
         SUM(CASE WHEN type = 'DESPESA' THEN amount ELSE 0 END) as spent
       FROM transactions
-      WHERE user_id = $1 AND type = 'DESPESA'
+      WHERE user_id = ? AND type = 'DESPESA'
       GROUP BY SUBSTRING(date FROM 1 FOR 7), date
       ORDER BY date DESC
       LIMIT 12
@@ -202,7 +202,7 @@ router.get('/analyze', async (req: Request, res: Response) => {
     try {
       await pgPool.query(`
         INSERT INTO ai_analysis_cache (id, user_id, month, analysis_data, expires_at)
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES (?, ?, ?, ?, ?)
         ON CONFLICT (user_id, month) DO UPDATE SET
           id = EXCLUDED.id,
           analysis_data = EXCLUDED.analysis_data,
