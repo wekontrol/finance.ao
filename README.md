@@ -43,10 +43,12 @@ Uma plataforma completa para gestão financeira doméstica com arquitetura serve
 
 ## 🚀 Instalação
 
-### Produção (Ubuntu 24.04) - UM ÚNICO COMANDO:
+### Produção (Ubuntu 24.04):
 
 ```bash
-sudo bash -c 'git clone https://github.com/wekontrol/finance.ao /var/www/gestor-financeiro && cd /var/www/gestor-financeiro && bash deploy.sh'
+git clone https://github.com/wekontrol/finance.ao
+cd finance.ao
+sudo bash deploy.sh
 ```
 
 **Isto faz tudo automaticamente:**
