@@ -309,6 +309,20 @@ export async function initializeDatabase() {
       }
     }
 
+    // Add status column to translations if it doesn't exist (migration for old DBs)
+    try {
+      const tableInfo = await pool.query("PRAGMA table_info(translations)");
+      const hasStatusColumn = tableInfo.rows?.some((col: any) => col.name === 'status') || 
+                             (Array.isArray(tableInfo) && tableInfo.some((col: any) => col.name === 'status'));
+      
+      if (!hasStatusColumn) {
+        await pool.query('ALTER TABLE translations ADD COLUMN status TEXT DEFAULT "active"');
+        console.log('✅ Added status column to translations');
+      }
+    } catch (err: any) {
+      // Continue even if migration fails - status column might already exist
+    }
+
     // Load translations from JSON files
     const translationsResult = await pool.query('SELECT COUNT(*) as count FROM translations');
     if (parseInt(translationsResult.rows[0]?.count || '0') === 0) {
