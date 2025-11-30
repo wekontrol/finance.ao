@@ -1,9 +1,5 @@
 #!/bin/bash
-
-# Parar se houver erro
 set -e
-
-# Configuração não interativa para apt
 export DEBIAN_FRONTEND=noninteractive
 
 echo ">>> [1/7] Atualizando sistema..."
@@ -28,13 +24,11 @@ echo ">>> [4/7] Preparando diretório da aplicação..."
 APP_DIR="/var/www/gestor-financeiro"
 APP_USER="nodeapp"
 
-# Criar usuário se não existir
 if ! id "$APP_USER" &>/dev/null; then
     sudo useradd -m -s /bin/bash "$APP_USER"
     echo "Usuário $APP_USER criado"
 fi
 
-# Criar diretório
 sudo mkdir -p $APP_DIR
 sudo chown -R root:root $APP_DIR
 sudo chmod 755 $APP_DIR
@@ -43,44 +37,35 @@ echo ">>> [5/7] Clonando/Copiando código e instalando dependências..."
 sudo cp -r . $APP_DIR/
 cd $APP_DIR
 
-# Ajustar permissões para instalação
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
 sudo chmod -R u+rwX $APP_DIR
 
-# Limpar cache antigo
 sudo -u $APP_USER sh -c 'rm -rf node_modules && rm -rf dist && rm -f package-lock.json'
-
-# Instalar como o usuário da aplicação
 sudo -u $APP_USER npm install
 sudo -u $APP_USER npm run build
 
-# Garantir permissões corretas após build
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
 sudo chmod -R 755 $APP_DIR
 
 echo ">>> [6/7] Configurando PostgreSQL e serviço systemd..."
 
-# Verificar se PostgreSQL está disponível
 if ! command -v psql &> /dev/null; then
     echo "Instalando PostgreSQL..."
     sudo apt-get install -y postgresql postgresql-contrib
 fi
 
-# Iniciar serviço PostgreSQL
 echo "Iniciando PostgreSQL..."
 sudo systemctl start postgresql || true
 sudo systemctl enable postgresql || true
 
-# Configurar PostgreSQL automaticamente
 echo "Configurando base de dados PostgreSQL..."
 
 DB_NAME="gestor_financeiro"
 DB_USER="gestor_user"
-DB_PASSWORD="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)"
+DB_PASSWORD="P$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 15)"
 DB_HOST="localhost"
 DB_PORT="5432"
 
-# Criar usuário e base de dados
 sudo -u postgres psql <<EOF || true
 CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
 ALTER USER $DB_USER CREATEDB;
@@ -90,10 +75,8 @@ ALTER DATABASE $DB_NAME OWNER TO $DB_USER;
 GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
 EOF
 
-# Gerar string de conexão
 POSTGRES_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Salvar credenciais
 CREDS_FILE="$APP_DIR/.postgres-credentials.txt"
 sudo tee $CREDS_FILE > /dev/null <<EOF
 ═══════════════════════════════════════════════════════════
@@ -124,9 +107,9 @@ echo "  Senha: $DB_PASSWORD"
 echo "  String de conexão: $POSTGRES_URL"
 echo ""
 
-# Criar arquivo .env.production com variáveis
+SESSION_SECRET="S$(openssl rand -base64 32 | tr -dc 'A-Za-z0-9' | head -c 31)"
+
 ENV_FILE="$APP_DIR/.env.production"
-SESSION_SECRET="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)"
 sudo tee $ENV_FILE > /dev/null <<ENVEOF
 NODE_ENV=production
 PORT=5000
@@ -137,7 +120,6 @@ ENVEOF
 sudo chmod 600 $ENV_FILE
 sudo chown $APP_USER:$APP_USER $ENV_FILE
 
-# Cria arquivo de serviço systemd
 sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<'SYSTEMDEOF'
 [Unit]
 Description=Gestor Financeiro Familiar - Node.js Application
@@ -161,14 +143,12 @@ EnvironmentFile=/var/www/gestor-financeiro/.env.production
 WantedBy=multi-user.target
 SYSTEMDEOF
 
-# Habilita e inicia o serviço
 sudo systemctl daemon-reload
 sudo systemctl enable gestor-financeiro
 
 echo ">>> [7/7] Iniciando serviço..."
 sudo systemctl start gestor-financeiro
 
-# Verifica se o serviço está rodando
 sleep 3
 if sudo systemctl is-active --quiet gestor-financeiro; then
     echo ""
