@@ -40,6 +40,10 @@ cd $APP_DIR
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
 sudo chmod -R u+rwX $APP_DIR
 
+# Copiar init-db.sh também
+sudo cp init-db.sh $APP_DIR/
+sudo chmod +x $APP_DIR/init-db.sh
+
 sudo -u $APP_USER sh -c 'rm -rf node_modules && rm -rf dist && rm -f package-lock.json'
 sudo -u $APP_USER npm install
 sudo -u $APP_USER npm run build
@@ -96,19 +100,9 @@ EOF
 sudo chmod 600 $CREDS_FILE
 sudo chown $APP_USER:$APP_USER $CREDS_FILE
 
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "✓ PostgreSQL configurado automaticamente!"
-echo "═══════════════════════════════════════════════════════════"
-echo ""
-echo "CREDENCIAIS GERADAS:"
-echo "  Utilizador: $DB_USER"
-echo "  Senha: $DB_PASSWORD"
-echo "  String de conexão: $POSTGRES_URL"
-echo ""
-
 SESSION_SECRET="$(head -c 100 /dev/urandom | LC_ALL=C tr -cd 'A-Za-z0-9' | head -c 32)"
 
+# IMPORTANTE: Criar .env.production AQUI ANTES DO SYSTEMD
 ENV_FILE="$APP_DIR/.env.production"
 sudo tee $ENV_FILE > /dev/null <<ENVEOF
 NODE_ENV=production
@@ -120,16 +114,30 @@ ENVEOF
 sudo chmod 600 $ENV_FILE
 sudo chown $APP_USER:$APP_USER $ENV_FILE
 
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "✓ PostgreSQL configurado automaticamente!"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+echo "CREDENCIAIS GERADAS:"
+echo "  Utilizador: $DB_USER"
+echo "  Senha: $DB_PASSWORD"
+echo "  String de conexão: $POSTGRES_URL"
+echo ""
+
+# Configurar systemd com .env carregado
 sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<'SYSTEMDEOF'
 [Unit]
 Description=Gestor Financeiro Familiar - Node.js Application
 After=network.target postgresql.service
-Wants=network-online.target
+Wants=network-online.target postgresql.service
 
 [Service]
 Type=simple
 User=nodeapp
 WorkingDirectory=/var/www/gestor-financeiro
+EnvironmentFile=/var/www/gestor-financeiro/.env.production
+ExecStartPre=/bin/bash /var/www/gestor-financeiro/init-db.sh /var/www/gestor-financeiro
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=10
@@ -137,7 +145,6 @@ StandardOutput=journal
 StandardError=journal
 LimitNOFILE=65535
 LimitNPROC=65535
-EnvironmentFile=/var/www/gestor-financeiro/.env.production
 
 [Install]
 WantedBy=multi-user.target

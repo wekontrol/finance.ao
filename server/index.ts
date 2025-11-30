@@ -25,13 +25,26 @@ import aiPlanningRoutes from './routes/aiPlanning';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
+// Validate required environment variables in production
+if (process.env.NODE_ENV === 'production') {
+  const requiredVars = ['DATABASE_URL', 'SESSION_SECRET', 'PORT'];
+  const missing = requiredVars.filter(v => !process.env[v]);
+  if (missing.length > 0) {
+    console.error('❌ Missing required environment variables:', missing);
+    process.exit(1);
+  }
+  console.log('✅ Environment variables validated');
+}
+
 // Initialize database before anything else
 (async () => {
   try {
     await initializeDatabase();
     await initializeSessionsTable();
+    console.log('✅ Database initialization completed');
   } catch (error) {
     console.error('Database initialization failed:', error);
+    process.exit(1);
   }
 })();
 
