@@ -118,9 +118,9 @@ export async function autoSaveMonthlyHistory(userId: string) {
         await pgPool.query(
           `INSERT INTO budget_history (id, user_id, category, month, limit_amount, spent_amount)
            VALUES (?, ?, ?, ?, ?, ?)
-           ON CONFLICT (user_id, category, month) DO UPDATE SET
-             limit_amount = EXCLUDED.limit_amount,
-             spent_amount = EXCLUDED.spent_amount`,
+           ON DUPLICATE KEY UPDATE
+             limit_amount = VALUES(limit_amount),
+             spent_amount = VALUES(spent_amount)`,
           [id, userId, categoryKey, previousMonth, limit.limit_amount, totalSpent]
         );
         
@@ -129,7 +129,7 @@ export async function autoSaveMonthlyHistory(userId: string) {
 
       await pgPool.query(
         `INSERT INTO app_settings (key, value) VALUES (?, ?)
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+         ON DUPLICATE KEY UPDATE value = VALUES(value)`,
         [`budget_history_saved_${userId}`, currentMonth]
       );
 
@@ -402,9 +402,9 @@ router.post('/history/save', async (req: Request, res: Response) => {
       await pgPool.query(
         `INSERT INTO budget_history (id, user_id, category, month, limit_amount, spent_amount)
          VALUES (?, ?, ?, ?, ?, ?)
-         ON CONFLICT (user_id, category, month) DO UPDATE SET
-           limit_amount = EXCLUDED.limit_amount,
-           spent_amount = EXCLUDED.spent_amount`,
+         ON DUPLICATE KEY UPDATE
+           limit_amount = VALUES(limit_amount,
+           spent_amount = VALUES(spent_amount`,
         [id, userId, categoryKey, currentMonth, limit.limit_amount, spent ? parseFloat(spent.total) : 0]
       );
       

@@ -103,7 +103,7 @@ router.post('/', requireTranslatorOrAdmin, async (req: Request, res: Response) =
     await pgPool.query(`
       INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
       VALUES (?, ?, ?, ?, ?, NOW(), 'active')
-      ON CONFLICT (language, key) DO UPDATE SET
+      ON DUPLICATE KEY UPDATE
         value = ?,
         updated_at = NOW(),
         status = 'active'
@@ -135,9 +135,8 @@ router.post('/language/add', requireTranslatorOrAdmin, async (req: Request, res:
       for (const t of baseResult.rows) {
         const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
         await pgPool.query(`
-          INSERT INTO translations (id, language, key, value, created_by, status)
+          INSERT IGNORE INTO translations (id, language, key, value, created_by, status)
           VALUES (?, ?, ?, ?, ?, 'active')
-          ON CONFLICT (language, key) DO NOTHING
         `, [id, language, t.key, t.value, userId]);
       }
     }
@@ -198,9 +197,9 @@ router.post('/import', requireTranslatorOrAdmin, async (req: Request, res: Respo
         await pgPool.query(`
           INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
           VALUES (?, ?, ?, ?, ?, NOW(), 'active')
-          ON CONFLICT (language, key) DO UPDATE SET
-            value = EXCLUDED.value,
-            created_by = EXCLUDED.created_by,
+          ON DUPLICATE KEY UPDATE
+            value = VALUES(value,
+            created_by = VALUES(created_by,
             updated_at = NOW(),
             status = 'active'
         `, [id, language, key, value, userId]);
@@ -365,7 +364,7 @@ router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request,
     await pgPool.query(`
       INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
       VALUES (?, ?, ?, ?, ?, NOW(), 'active')
-      ON CONFLICT (language, key) DO UPDATE SET
+      ON DUPLICATE KEY UPDATE
         value = ?,
         updated_at = NOW(),
         status = 'active'

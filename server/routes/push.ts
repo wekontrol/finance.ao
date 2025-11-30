@@ -27,7 +27,7 @@ router.post('/subscribe', async (req: Request, res: Response) => {
     await pgPool.query(`
       INSERT INTO push_subscriptions (id, user_id, subscription, user_agent)
       VALUES (?, ?, ?, ?)
-      ON CONFLICT(user_id, subscription) DO UPDATE SET last_active = CURRENT_TIMESTAMP
+      ON DUPLICATE KEY UPDATE last_active = CURRENT_TIMESTAMP
     `, [id, userId, subscriptionJson, req.headers['user-agent'] || '']);
 
     res.json({ message: 'Subscribed to push notifications' });

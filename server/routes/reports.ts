@@ -286,7 +286,7 @@ router.post('/logo', async (req: Request, res: Response) => {
     await pgPool.query(
       `INSERT INTO app_settings (key, value)
        VALUES (?, ?)
-       ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`,
+       ON DUPLICATE KEY UPDATE value = VALUES(value`,
       ['app_logo', logo]
     );
 

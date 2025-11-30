@@ -203,10 +203,9 @@ router.get('/analyze', async (req: Request, res: Response) => {
       await pgPool.query(`
         INSERT INTO ai_analysis_cache (id, user_id, month, analysis_data, expires_at)
         VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT (user_id, month) DO UPDATE SET
-          id = EXCLUDED.id,
-          analysis_data = EXCLUDED.analysis_data,
-          expires_at = EXCLUDED.expires_at
+        ON DUPLICATE KEY UPDATE
+          analysis_data = VALUES(analysis_data),
+          expires_at = VALUES(expires_at)
       `, [cacheId, userId, currentMonth, JSON.stringify(fullResponse), expiresAt]);
       console.log(`[AI Planning] Cache SAVED for user ${userId} month ${currentMonth}`);
     } catch (cacheError) {

@@ -25,7 +25,7 @@ router.post('/', async (req: Request, res: Response) => {
     await pgPool.query(`
       INSERT INTO app_settings (key, value) 
       VALUES (?, ?)
-      ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value
+      ON DUPLICATE KEY UPDATE value = VALUES(value
     `, [key, value]);
     res.json({ success: true });
   } catch (error: any) {
