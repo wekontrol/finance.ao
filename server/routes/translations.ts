@@ -374,7 +374,7 @@ Text to translate: "${text}"`;
 
 // Save translation WITH history
 router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
-  const userId = req.session.userId;
+  const userId = req.session.userId || 'u0'; // Default to admin if not set
   const { language, key, value } = req.body;
 
   if (!language || !key || !value) {
@@ -397,8 +397,7 @@ router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request,
       INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
       VALUES ($1, $2, $3, $4, $5, NOW(), 'active')
       ON CONFLICT (language, key) DO UPDATE SET
-        value = EXCLUDED.value,
-        created_by = EXCLUDED.created_by,
+        value = $3,
         updated_at = NOW(),
         status = 'active'
     `, [translationId, language, key, value, userId]);
@@ -414,6 +413,7 @@ router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request,
 
     res.status(201).json({ id: translationId, language, key, value, historyRecorded: oldValue !== value });
   } catch (error: any) {
+    console.error('[POST /save-with-history] Error:', error);
     res.status(400).json({ error: error.message });
   }
 });
