@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { initializeDatabase } from './db/schema';
 import pgPool, { initializeSessionsTable } from './db/postgres';
+import { sqlitePool } from './db/sqlite';
 import ConnectPgSimple from 'connect-pg-simple';
 import authRoutes from './routes/auth';
 import transactionRoutes from './routes/transactions';
@@ -25,29 +26,36 @@ import aiPlanningRoutes from './routes/aiPlanning';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-// Force development mode (ignore Neon in Replit)
+// Determine environment
 const isProd = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL;
 if (isProd) {
   console.log('✅ Production mode: Using PostgreSQL');
 } else {
-  console.log('ℹ️  Development mode: Using in-memory storage (no persistent DB)');
+  console.log('🗄️  Development mode: Using SQLite');
 }
 
-// Initialize database only in production
+// Initialize database
 (async () => {
   try {
+    // Initialize SQLite in development
+    if (!isProd) {
+      await sqlitePool.init();
+    }
+    
+    // Initialize in production
     if (isProd) {
       await initializeDatabase();
-      await initializeSessionsTable();
-      console.log('✅ Database initialization completed');
-    } else {
-      console.log('⚠️  Development mode - skipping database initialization');
     }
+    
+    // Initialize sessions table
+    await initializeSessionsTable();
+    console.log('✅ Database initialization completed');
   } catch (error) {
     console.error('Database initialization error:', error);
     if (isProd) {
       process.exit(1);
     }
+    // Development: non-critical
   }
 })();
 

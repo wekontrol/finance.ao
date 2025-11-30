@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pgPool from '../db/postgres';
+import { sqlitePool } from '../db/sqlite';
 import { findUserByUsername as findUserInMemory } from '../db/inmemory';
 import { autoSaveMonthlyHistory } from './budget';
 
@@ -23,15 +24,20 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     let user: any = null;
 
-    // Try database first
-    const result = await pgPool.query(`
+    // Try database first (PostgreSQL or SQLite)
+    const sql = `
       SELECT id, username, password, name, role, avatar, status, created_by, family_id, birth_date, allow_parent_view
-      FROM users WHERE username = $1
-    `, [username]);
+      FROM users WHERE username = ?
+    `;
+    
+    try {
+      const result = await pgPool.query(sql, [username]);
+      user = result.rows[0];
+    } catch (dbErr) {
+      console.warn('DB query error:', dbErr);
+    }
 
-    user = result.rows[0];
-
-    // If not found in DB, try in-memory (development)
+    // If not found in DB, try in-memory (development fallback)
     if (!user) {
       user = findUserInMemory(username);
     }

@@ -1,15 +1,13 @@
 import { Pool } from 'pg';
+import sqlitePool from './sqlite';
 
-// PostgreSQL connection pool
-// In Replit development: Ignore DATABASE_URL to use memory store
-// In production (Ubuntu/Render): DATABASE_URL is required
+// PostgreSQL connection pool with SQLite fallback for development
 let pool: any;
 
-// Force development mode in Replit (disable Neon endpoint)
-const useRealDB = process.env.DATABASE_URL && process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL;
 
-if (useRealDB) {
-  // Production (Ubuntu, Render) OR Development with real DB
+if (isProd) {
+  // Production: Use PostgreSQL
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 10,
@@ -17,51 +15,33 @@ if (useRealDB) {
     connectionTimeoutMillis: 10000,
     statement_timeout: 30000,
   });
-  pool.on('error', (err) => {
-    console.error('Unexpected error on idle client', err);
+  pool.on('error', (err: any) => {
+    console.error('❌ PostgreSQL error:', err);
   });
-  console.log('✅ Using PostgreSQL connection pool');
+  console.log('✅ Using PostgreSQL connection pool (production)');
 } else {
-  // Development fallback - SIMPLE memory store
-  class SimpleMemoryPool {
-    async query(sql: string, params?: any[]) {
-      // Return empty results - forces app to handle missing DB gracefully
-      return { rows: [] };
-    }
-    release() {}
-    connect() { return this; }
-  }
-  pool = new SimpleMemoryPool();
-  console.log('⚠️  No DATABASE_URL - using memory pool (development only)');
+  // Development: Use SQLite pool
+  pool = sqlitePool;
+  console.log('🗄️  Using SQLite connection pool (development)');
 }
 
 // Create sessions table if it doesn't exist
 export async function initializeSessionsTable() {
   try {
-    if (!process.env.DATABASE_URL) {
-      console.log('⚠️  Skipping session table init - no DATABASE_URL');
-      return;
-    }
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS session (
-        sid varchar NOT NULL,
-        sess json NOT NULL,
-        expire timestamp(6) NOT NULL,
-        PRIMARY KEY (sid)
-      );
-      CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire);
-    `);
-
-    const result = await pool.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'session'
-      );
-    `);
-
-    if (result.rows[0]?.exists) {
+    if (isProd) {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS session (
+          sid varchar NOT NULL,
+          sess json NOT NULL,
+          expire timestamp(6) NOT NULL,
+          PRIMARY KEY (sid)
+        );
+        CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire);
+      `);
       console.log('✅ PostgreSQL sessions table initialized');
+    } else {
+      // SQLite initializes tables automatically
+      console.log('✅ SQLite sessions table ready');
     }
   } catch (error) {
     console.error('Error initializing sessions table:', error);
