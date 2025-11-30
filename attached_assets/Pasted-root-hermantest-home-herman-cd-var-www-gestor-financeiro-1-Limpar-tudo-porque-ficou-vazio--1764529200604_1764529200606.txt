@@ -1,0 +1,76 @@
+root@hermantest:/home/herman# cd /var/www/gestor-financeiro
+
+# 1. Limpar tudo (porque ficou vazio)
+sudo rm -rf *
+sudo rm -rf .git
+
+# 2. Clonar repositório COMPLETO
+sudo git clone https://github.com/wekontrol/finance.ao .
+
+# 3. Dar permissões
+sudo chmod +x deploy.sh init-db.sh setup.sh
+
+# 4. EXECUTAR SETUP (ou deploy direto)
+sudo bash setup.sh
+
+# OU, se setup.sh tiver problemas:
+# sudo bash deploy.sh
+
+# Depois ver logs
+sudo journalctl -u gestor-financeiro -n 50 --no-pager
+fatal: destination path '.' already exists and is not an empty directory.
+chmod: cannot access 'deploy.sh': No such file or directory
+chmod: cannot access 'init-db.sh': No such file or directory
+chmod: cannot access 'setup.sh': No such file or directory
+bash: setup.sh: No such file or directory
+Nov 30 18:58:26 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:58:26 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:58:36 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 126.
+Nov 30 18:58:36 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:58:36 hermantest gestor-financeiro[38886]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:58:36 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:58:36 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:58:36 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:58:46 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 127.
+Nov 30 18:58:46 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:58:46 hermantest gestor-financeiro[38889]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:58:46 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:58:46 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:58:46 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:58:57 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 128.
+Nov 30 18:58:57 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:58:57 hermantest gestor-financeiro[38892]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:58:57 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:58:57 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:58:57 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:59:07 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 129.
+Nov 30 18:59:07 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:59:07 hermantest gestor-financeiro[38896]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:59:07 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:59:07 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:59:07 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:59:17 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 130.
+Nov 30 18:59:17 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:59:17 hermantest gestor-financeiro[38917]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:59:17 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:59:17 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:59:17 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:59:27 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 131.
+Nov 30 18:59:27 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:59:27 hermantest gestor-financeiro[38920]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:59:27 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:59:27 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:59:27 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:59:38 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 132.
+Nov 30 18:59:38 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:59:38 hermantest gestor-financeiro[38923]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:59:38 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:59:38 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:59:38 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+Nov 30 18:59:48 hermantest systemd[1]: gestor-financeiro.service: Scheduled restart job, restart counter is at 133.
+Nov 30 18:59:48 hermantest systemd[1]: Starting gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application...
+Nov 30 18:59:48 hermantest gestor-financeiro[38936]: /bin/bash: /var/www/gestor-financeiro/init-db.sh: No such file or directory
+Nov 30 18:59:48 hermantest systemd[1]: gestor-financeiro.service: Control process exited, code=exited, status=127/n/a
+Nov 30 18:59:48 hermantest systemd[1]: gestor-financeiro.service: Failed with result 'exit-code'.
+Nov 30 18:59:48 hermantest systemd[1]: Failed to start gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application.
+root@hermantest:/var/www/gestor-financeiro#
