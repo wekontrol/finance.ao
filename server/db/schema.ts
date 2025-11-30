@@ -263,7 +263,7 @@ export async function initializeDatabase() {
     `);
 
     // Check if admin exists
-    const adminResult = await pgPool.query('SELECT id FROM users WHERE username = ?', ['admin']);
+    const adminResult = await pgPool.query('SELECT id FROM users WHERE username = $1', ['admin']);
     
     if (adminResult.rows.length === 0) {
       const hashedPassword = bcrypt.hashSync('admin', 10);

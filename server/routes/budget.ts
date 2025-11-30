@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../db/schema';
+import pgPool from '../db/postgres';
 
 const router = Router();
 
@@ -47,23 +47,25 @@ export const DEFAULT_BUDGETS = [
   { translationKey: 'budget.category.general', defaultLimit: 500 }
 ];
 
-export function createDefaultBudgetsForUser(userId: string): number {
+export async function createDefaultBudgetsForUser(userId: string): Promise<number> {
   let created = 0;
   
-  DEFAULT_BUDGETS.forEach((budget) => {
-    const existing = db.prepare(`
-      SELECT id FROM budget_limits WHERE user_id = ? AND translation_key = ?
-    `).get(userId, budget.translationKey);
+  for (const budget of DEFAULT_BUDGETS) {
+    const existingResult = await pgPool.query(
+      `SELECT id FROM budget_limits WHERE user_id = $1 AND translation_key = $2`,
+      [userId, budget.translationKey]
+    );
 
-    if (!existing) {
+    if (existingResult.rows.length === 0) {
       const budgetId = uuidv4();
-      db.prepare(`
-        INSERT INTO budget_limits (id, user_id, category, translation_key, limit_amount, is_default)
-        VALUES (?, ?, ?, ?, ?, 1)
-      `).run(budgetId, userId, budget.translationKey, budget.translationKey, budget.defaultLimit);
+      await pgPool.query(
+        `INSERT INTO budget_limits (id, user_id, category, translation_key, limit_amount, is_default)
+         VALUES ($1, $2, $3, $4, $5, 1)`,
+        [budgetId, userId, budget.translationKey, budget.translationKey, budget.defaultLimit]
+      );
       created++;
     }
-  });
+  }
 
   if (created > 0) {
     console.log(`[Budget] Created ${created} default budgets for user ${userId}`);
@@ -72,31 +74,36 @@ export function createDefaultBudgetsForUser(userId: string): number {
   return created;
 }
 
-export function autoSaveMonthlyHistory(userId: string) {
+export async function autoSaveMonthlyHistory(userId: string) {
   try {
-    const lastSave = db.prepare(`
-      SELECT value FROM app_settings WHERE key = ?
-    `).get(`budget_history_saved_${userId}`) as any;
+    const lastSaveResult = await pgPool.query(
+      `SELECT value FROM app_settings WHERE key = $1`,
+      [`budget_history_saved_${userId}`]
+    );
 
-    const lastMonth = lastSave?.value || '2000-01';
+    const lastMonth = lastSaveResult.rows[0]?.value || '2000-01';
     const currentMonth = new Date().toISOString().slice(0, 7);
 
     if (lastMonth !== currentMonth) {
       const previousMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
       
-      const limits = db.prepare(`
-        SELECT * FROM budget_limits WHERE user_id = ?
-      `).all(userId);
+      const limitsResult = await pgPool.query(
+        `SELECT * FROM budget_limits WHERE user_id = $1`,
+        [userId]
+      );
+      const limits = limitsResult.rows;
 
-      const transactions = db.prepare(`
-        SELECT category, SUM(amount) as total
-        FROM transactions
-        WHERE user_id = ? AND type = 'DESPESA' AND date LIKE ?
-        GROUP BY category
-      `).all(userId, `${previousMonth}%`) as any[];
+      const transactionsResult = await pgPool.query(
+        `SELECT category, SUM(amount) as total
+         FROM transactions
+         WHERE user_id = $1 AND type = 'DESPESA' AND date LIKE $2
+         GROUP BY category`,
+        [userId, `${previousMonth}%`]
+      );
+      const transactions = transactionsResult.rows;
 
       let saved = 0;
-      limits.forEach((limit: any) => {
+      for (const limit of limits) {
         const categoryKey = limit.translation_key || limit.category;
         const legacyName = LEGACY_CATEGORY_MAP[categoryKey];
         
@@ -108,17 +115,23 @@ export function autoSaveMonthlyHistory(userId: string) {
         const totalSpent = spent?.total || 0;
         const id = uuidv4();
         
-        db.prepare(`
-          INSERT OR REPLACE INTO budget_history (id, user_id, category, month, limit_amount, spent_amount)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).run(id, userId, categoryKey, previousMonth, limit.limit_amount, totalSpent);
+        await pgPool.query(
+          `INSERT INTO budget_history (id, user_id, category, month, limit_amount, spent_amount)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (user_id, category, month) DO UPDATE SET
+             limit_amount = EXCLUDED.limit_amount,
+             spent_amount = EXCLUDED.spent_amount`,
+          [id, userId, categoryKey, previousMonth, limit.limit_amount, totalSpent]
+        );
         
         saved++;
-      });
+      }
 
-      db.prepare(`
-        INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)
-      `).run(`budget_history_saved_${userId}`, currentMonth);
+      await pgPool.query(
+        `INSERT INTO app_settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [`budget_history_saved_${userId}`, currentMonth]
+      );
 
       console.log(`Auto-saved budget history for user ${userId}: ${limits.length} categories from ${previousMonth}`);
     }
@@ -127,35 +140,39 @@ export function autoSaveMonthlyHistory(userId: string) {
   }
 }
 
-export function startMonthlyHistoryScheduler() {
-  const interval = setInterval(() => {
+export async function startMonthlyHistoryScheduler() {
+  const runScheduler = async () => {
     try {
-      const users = db.prepare(`
-        SELECT DISTINCT user_id FROM budget_limits
-      `).all() as any[];
+      const usersResult = await pgPool.query(
+        `SELECT DISTINCT user_id FROM budget_limits`
+      );
+      const users = usersResult.rows;
 
       if (users.length > 0) {
         console.log(`[Budget Scheduler] Verificando ${users.length} usuários para auto-save do histórico...`);
-        users.forEach(user => {
-          autoSaveMonthlyHistory(user.user_id);
-        });
+        for (const user of users) {
+          await autoSaveMonthlyHistory(user.user_id);
+        }
       }
     } catch (error) {
       console.error('[Budget Scheduler] Error:', error);
     }
-  }, 30 * 60 * 1000);
+  };
 
-  setTimeout(() => {
+  const interval = setInterval(runScheduler, 30 * 60 * 1000);
+
+  setTimeout(async () => {
     try {
-      const users = db.prepare(`
-        SELECT DISTINCT user_id FROM budget_limits
-      `).all() as any[];
+      const usersResult = await pgPool.query(
+        `SELECT DISTINCT user_id FROM budget_limits`
+      );
+      const users = usersResult.rows;
       
       if (users.length > 0) {
         console.log(`[Budget Scheduler] Execução inicial: verificando ${users.length} usuários...`);
-        users.forEach(user => {
-          autoSaveMonthlyHistory(user.user_id);
-        });
+        for (const user of users) {
+          await autoSaveMonthlyHistory(user.user_id);
+        }
       }
     } catch (error) {
       console.error('[Budget Scheduler] Initial run error:', error);
@@ -176,39 +193,43 @@ function requireAuth(req: Request, res: Response, next: Function) {
 
 router.use(requireAuth);
 
-router.get('/limits', (req: Request, res: Response) => {
+router.get('/limits', async (req: Request, res: Response) => {
   const userId = req.session.userId;
 
-  let limits = db.prepare(`
-    SELECT * FROM budget_limits WHERE user_id = ?
-    ORDER BY category
-  `).all(userId) as any[];
+  let limitsResult = await pgPool.query(
+    `SELECT * FROM budget_limits WHERE user_id = $1
+     ORDER BY category`,
+    [userId]
+  );
+  let limits = limitsResult.rows;
 
   if (limits.length === 0) {
-    createDefaultBudgetsForUser(userId!);
-    limits = db.prepare(`
-      SELECT * FROM budget_limits WHERE user_id = ?
-      ORDER BY category
-    `).all(userId) as any[];
+    await createDefaultBudgetsForUser(userId!);
+    limitsResult = await pgPool.query(
+      `SELECT * FROM budget_limits WHERE user_id = $1
+       ORDER BY category`,
+      [userId]
+    );
+    limits = limitsResult.rows;
   }
 
   const formattedLimits = limits.map((l: any) => ({
     category: l.category,
     translationKey: l.translation_key,
     limit: l.limit_amount,
-    isDefault: l.is_default === 1
+    isDefault: l.is_default === 1 || l.is_default === true
   }));
 
   res.json(formattedLimits);
 });
 
-router.post('/create-defaults', (req: Request, res: Response) => {
+router.post('/create-defaults', async (req: Request, res: Response) => {
   const userId = req.session.userId;
-  const created = createDefaultBudgetsForUser(userId!);
+  const created = await createDefaultBudgetsForUser(userId!);
   res.json({ message: `Created ${created} default budgets`, created });
 });
 
-router.post('/limits', (req: Request, res: Response) => {
+router.post('/limits', async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const { category, limit, translationKey } = req.body;
 
@@ -222,77 +243,91 @@ router.post('/limits', (req: Request, res: Response) => {
 
   const categoryIdentifier = translationKey || category;
   
-  const existing = db.prepare(`
-    SELECT * FROM budget_limits WHERE user_id = ? AND (category = ? OR translation_key = ?)
-  `).get(userId, categoryIdentifier, categoryIdentifier);
+  const existingResult = await pgPool.query(
+    `SELECT * FROM budget_limits WHERE user_id = $1 AND (category = $2 OR translation_key = $3)`,
+    [userId, categoryIdentifier, categoryIdentifier]
+  );
+  const existing = existingResult.rows[0];
 
   if (existing) {
-    db.prepare(`
-      UPDATE budget_limits SET limit_amount = ? WHERE user_id = ? AND (category = ? OR translation_key = ?)
-    `).run(limit, userId, categoryIdentifier, categoryIdentifier);
+    await pgPool.query(
+      `UPDATE budget_limits SET limit_amount = $1 WHERE user_id = $2 AND (category = $3 OR translation_key = $4)`,
+      [limit, userId, categoryIdentifier, categoryIdentifier]
+    );
   } else {
     const id = uuidv4();
-    db.prepare(`
-      INSERT INTO budget_limits (id, user_id, category, translation_key, limit_amount, is_default)
-      VALUES (?, ?, ?, ?, ?, 0)
-    `).run(id, userId, category, translationKey || null, limit);
+    await pgPool.query(
+      `INSERT INTO budget_limits (id, user_id, category, translation_key, limit_amount, is_default)
+       VALUES ($1, $2, $3, $4, $5, 0)`,
+      [id, userId, category, translationKey || null, limit]
+    );
   }
 
   res.json({ category, limit, translationKey });
 });
 
-router.delete('/limits/:category', (req: Request, res: Response) => {
+router.delete('/limits/:category', async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const { category } = req.params;
   const decodedCategory = decodeURIComponent(category);
 
-  const budget = db.prepare(`
-    SELECT is_default, translation_key FROM budget_limits WHERE user_id = ? AND (category = ? OR translation_key = ?)
-  `).get(userId, decodedCategory, decodedCategory) as any;
+  const budgetResult = await pgPool.query(
+    `SELECT is_default, translation_key FROM budget_limits WHERE user_id = $1 AND (category = $2 OR translation_key = $3)`,
+    [userId, decodedCategory, decodedCategory]
+  );
+  const budget = budgetResult.rows[0];
 
-  if (budget?.is_default === 1) {
+  if (budget?.is_default === 1 || budget?.is_default === true) {
     return res.status(403).json({ error: 'Não pode deletar orçamentos padrão' });
   }
 
-  db.prepare(`
-    UPDATE transactions SET category = 'budget.category.general' WHERE user_id = ? AND category = ?
-  `).run(userId, decodedCategory);
+  await pgPool.query(
+    `UPDATE transactions SET category = 'budget.category.general' WHERE user_id = $1 AND category = $2`,
+    [userId, decodedCategory]
+  );
 
-  db.prepare(`
-    DELETE FROM budget_limits WHERE user_id = ? AND (category = ? OR translation_key = ?)
-  `).run(userId, decodedCategory, decodedCategory);
+  await pgPool.query(
+    `DELETE FROM budget_limits WHERE user_id = $1 AND (category = $2 OR translation_key = $3)`,
+    [userId, decodedCategory, decodedCategory]
+  );
 
   res.json({ message: 'Budget deleted and transactions moved to General' });
 });
 
-router.get('/summary', (req: Request, res: Response) => {
+router.get('/summary', async (req: Request, res: Response) => {
   const userId = req.session.userId;
 
   const currentMonth = new Date().toISOString().slice(0, 7);
 
-  let limits = db.prepare(`
-    SELECT * FROM budget_limits WHERE user_id = ?
-  `).all(userId) as any[];
+  let limitsResult = await pgPool.query(
+    `SELECT * FROM budget_limits WHERE user_id = $1`,
+    [userId]
+  );
+  let limits = limitsResult.rows;
 
   if (limits.length === 0) {
-    createDefaultBudgetsForUser(userId!);
-    limits = db.prepare(`
-      SELECT * FROM budget_limits WHERE user_id = ?
-    `).all(userId) as any[];
+    await createDefaultBudgetsForUser(userId!);
+    limitsResult = await pgPool.query(
+      `SELECT * FROM budget_limits WHERE user_id = $1`,
+      [userId]
+    );
+    limits = limitsResult.rows;
   }
 
-  const transactions = db.prepare(`
-    SELECT category, SUM(amount) as total
-    FROM transactions
-    WHERE user_id = ? AND type = 'DESPESA' AND date LIKE ?
-    GROUP BY category
-  `).all(userId, `${currentMonth}%`);
+  const transactionsResult = await pgPool.query(
+    `SELECT category, SUM(amount) as total
+     FROM transactions
+     WHERE user_id = $1 AND type = 'DESPESA' AND date LIKE $2
+     GROUP BY category`,
+    [userId, `${currentMonth}%`]
+  );
+  const transactions = transactionsResult.rows;
 
   const summary = limits.map((l: any) => {
     const categoryKey = l.translation_key || l.category;
     const legacyName = LEGACY_CATEGORY_MAP[categoryKey];
     
-    const spent = (transactions as any[]).find(t => 
+    const spent = transactions.find(t => 
       t.category === categoryKey || 
       t.category === l.category ||
       (legacyName && t.category === legacyName)
@@ -302,24 +337,26 @@ router.get('/summary', (req: Request, res: Response) => {
       category: l.category,
       translationKey: l.translation_key,
       limit: l.limit_amount,
-      spent: spent ? spent.total : 0,
-      percentage: spent ? Math.round((spent.total / l.limit_amount) * 100) : 0,
-      isDefault: l.is_default === 1
+      spent: spent ? parseFloat(spent.total) : 0,
+      percentage: spent ? Math.round((parseFloat(spent.total) / l.limit_amount) * 100) : 0,
+      isDefault: l.is_default === 1 || l.is_default === true
     };
   });
 
   res.json(summary);
 });
 
-router.get('/history', (req: Request, res: Response) => {
+router.get('/history', async (req: Request, res: Response) => {
   const userId = req.session.userId;
   
-  const history = db.prepare(`
-    SELECT * FROM budget_history 
-    WHERE user_id = ? 
-    ORDER BY month DESC 
-    LIMIT 12
-  `).all(userId);
+  const historyResult = await pgPool.query(
+    `SELECT * FROM budget_history 
+     WHERE user_id = $1 
+     ORDER BY month DESC 
+     LIMIT 12`,
+    [userId]
+  );
+  const history = historyResult.rows;
 
   const grouped = history.reduce((acc: any, row: any) => {
     if (!acc[row.month]) {
@@ -336,35 +373,43 @@ router.get('/history', (req: Request, res: Response) => {
   res.json(grouped);
 });
 
-router.post('/history/save', (req: Request, res: Response) => {
+router.post('/history/save', async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const currentMonth = new Date().toISOString().slice(0, 7);
 
   try {
-    const limits = db.prepare(`
-      SELECT * FROM budget_limits WHERE user_id = ?
-    `).all(userId);
+    const limitsResult = await pgPool.query(
+      `SELECT * FROM budget_limits WHERE user_id = $1`,
+      [userId]
+    );
+    const limits = limitsResult.rows;
 
-    const transactions = db.prepare(`
-      SELECT category, SUM(amount) as total
-      FROM transactions
-      WHERE user_id = ? AND type = 'DESPESA' AND date LIKE ?
-      GROUP BY category
-    `).all(userId, `${currentMonth}%`) as any[];
+    const transactionsResult = await pgPool.query(
+      `SELECT category, SUM(amount) as total
+       FROM transactions
+       WHERE user_id = $1 AND type = 'DESPESA' AND date LIKE $2
+       GROUP BY category`,
+      [userId, `${currentMonth}%`]
+    );
+    const transactions = transactionsResult.rows;
 
     let saved = 0;
-    limits.forEach((limit: any) => {
+    for (const limit of limits) {
       const categoryKey = limit.translation_key || limit.category;
       const spent = transactions.find(t => t.category === categoryKey || t.category === limit.category);
       const id = uuidv4();
       
-      db.prepare(`
-        INSERT OR REPLACE INTO budget_history (id, user_id, category, month, limit_amount, spent_amount)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(id, userId, categoryKey, currentMonth, limit.limit_amount, spent ? spent.total : 0);
+      await pgPool.query(
+        `INSERT INTO budget_history (id, user_id, category, month, limit_amount, spent_amount)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (user_id, category, month) DO UPDATE SET
+           limit_amount = EXCLUDED.limit_amount,
+           spent_amount = EXCLUDED.spent_amount`,
+        [id, userId, categoryKey, currentMonth, limit.limit_amount, spent ? parseFloat(spent.total) : 0]
+      );
       
       saved++;
-    });
+    }
 
     res.json({ message: `Histórico de ${saved} categorias salvo para ${currentMonth}` });
   } catch (error) {
