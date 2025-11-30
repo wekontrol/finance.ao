@@ -26,6 +26,7 @@ fi
 echo ">>> [4/7] Preparando diretório da aplicação..."
 APP_DIR="/var/www/gestor-financeiro"
 APP_USER="nodeapp"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if ! id "$APP_USER" &>/dev/null; then
     sudo useradd -m -s /bin/bash "$APP_USER"
@@ -33,20 +34,37 @@ if ! id "$APP_USER" &>/dev/null; then
 fi
 
 sudo mkdir -p $APP_DIR
-sudo rm -rf $APP_DIR/*
-sudo cp -r . $APP_DIR/
+
+# Só copia se não é já a mesma pasta
+if [ "$SCRIPT_DIR" != "$APP_DIR" ]; then
+    echo "Copiando arquivos para $APP_DIR..."
+    sudo rm -rf $APP_DIR/*
+    sudo cp -r $SCRIPT_DIR/* $APP_DIR/ 2>/dev/null || true
+    sudo cp -r $SCRIPT_DIR/.git $APP_DIR/ 2>/dev/null || true
+else
+    echo "Já está em $APP_DIR, pulando cópia"
+fi
+
 cd $APP_DIR
 sudo chmod +x init-db.sh deploy.sh
 
 echo ">>> [5/7] Instalando dependências npm..."
 cd $APP_DIR
 
+# Verifica package.json
+if [ ! -f "package.json" ]; then
+    echo "❌ ERRO: package.json não encontrado em $APP_DIR!"
+    echo "Conteúdo de $APP_DIR:"
+    ls -la
+    exit 1
+fi
+
 echo "Limpando dependências antigas..."
 sudo rm -rf node_modules dist package-lock.json 2>/dev/null || true
 echo "✓ Limpeza concluída"
 
 echo "Instalando dependências npm (incluindo Vite para build)..."
-npm install --legacy-peer-deps 2>&1 | tail -5 || {
+sudo npm install --legacy-peer-deps 2>&1 | tail -5 || {
     echo "ERRO: npm install falhou!"
     exit 1
 }
