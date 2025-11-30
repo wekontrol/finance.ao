@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "bash"]
+modules = ["nodejs-20", "web", "bash", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -40,6 +40,10 @@ externalPort = 80
 [[ports]]
 localPort = 34753
 externalPort = 3000
+
+[[ports]]
+localPort = 43213
+externalPort = 3002
 
 [deployment]
 deploymentTarget = "autoscale"
