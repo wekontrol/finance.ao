@@ -45,15 +45,19 @@ echo "Limpando dependências antigas..."
 sudo rm -rf node_modules dist package-lock.json 2>/dev/null || true
 echo "✓ Limpeza concluída"
 
-echo "Instalando dependências npm..."
+echo "Instalando dependências npm (incluindo Vite para build)..."
 npm install --legacy-peer-deps 2>&1 | tail -5 || {
     echo "ERRO: npm install falhou!"
     exit 1
 }
 
 echo "Compilando frontend..."
-# Build already done by npm install, skip explicit build
-# npm run build 2>&1 | tail -5 || true
+npm run build 2>&1 | tail -5 || {
+    echo "AVISO: Build falhou, continuando (dist pode estar desatualizado)"
+}
+
+echo "Removendo dependências de desenvolvimento (Vite, TypeScript, etc)..."
+npm install --production --legacy-peer-deps 2>&1 | tail -3 || true
 
 # Após instalação, dar permissões ao nodeapp
 sudo chown -R $APP_USER:$APP_USER $APP_DIR
