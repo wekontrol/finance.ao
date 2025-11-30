@@ -1,0 +1,74 @@
+root@hermantest:/home/herman/finance.ao# cd /home/herman/finance.ao
+# 1. Ver o STATUS do serviço
+sudo systemctl status gestor-financeiro
+# 2. Ver os ERROS dos últimos 50 linhas
+sudo journalctl -u gestor-financeiro -n 50 --no-pager
+# 3. Ou se preferir, logs em tempo real:
+sudo journalctl -u gestor-financeiro -f
+● gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application
+     Loaded: loaded (/etc/systemd/system/gestor-financeiro.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2025-11-30 14:29:10 UTC; 12min ago
+   Main PID: 6017 (npm start)
+      Tasks: 35 (limit: 2265)
+     Memory: 74.1M (peak: 101.2M)
+        CPU: 2.683s
+     CGroup: /system.slice/gestor-financeiro.service
+             ├─6017 "npm start"
+             ├─6029 sh -c "NODE_ENV=production tsx server/index.ts"
+             ├─6030 node /var/www/gestor-financeiro/node_modules/.bin/tsx server/index.ts
+             └─6041 /usr/bin/node --require /var/www/gestor-financeiro/node_modules/tsx/dist/preflight.cjs --import fil>
+
+Nov 30 14:38:56 hermantest npm[6041]: Auto-saved budget history for user u0: 0 categories from 2025-10
+Nov 30 14:38:56 hermantest npm[6041]: [GET /api-config] Provider: google_gemini
+Nov 30 14:38:56 hermantest npm[6041]: [GET /api-config] No config found for google_gemini
+Nov 30 14:39:00 hermantest npm[6041]: [AI Planning Auth Debug] {
+Nov 30 14:39:00 hermantest npm[6041]:   hasSession: true,
+Nov 30 14:39:00 hermantest npm[6041]:   userId: undefined,
+Nov 30 14:39:00 hermantest npm[6041]:   sessionId: 'ofBkuCoetEc9RxuzQ96JPl73PBl7rfz8',
+Nov 30 14:39:00 hermantest npm[6041]:   cookies: 'NO'
+Nov 30 14:39:00 hermantest npm[6041]: }
+Nov 30 14:39:00 hermantest npm[6041]: [AI Planning Auth Failed] No userId in session
+lines 1-23/23 (END)...skipping...
+● gestor-financeiro.service - Gestor Financeiro Familiar - Node.js Application
+     Loaded: loaded (/etc/systemd/system/gestor-financeiro.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2025-11-30 14:29:10 UTC; 12min ago
+   Main PID: 6017 (npm start)
+      Tasks: 35 (limit: 2265)
+     Memory: 74.1M (peak: 101.2M)
+        CPU: 2.683s
+     CGroup: /system.slice/gestor-financeiro.service
+             ├─6017 "npm start"
+             ├─6029 sh -c "NODE_ENV=production tsx server/index.ts"
+             ├─6030 node /var/www/gestor-financeiro/node_modules/.bin/tsx server/index.ts
+             └─6041 /usr/bin/node --require /var/www/gestor-financeiro/node_modules/tsx/dist/preflight.cjs --import file:///var/www/gestor-financeiro/node_>
+
+Nov 30 14:38:56 hermantest npm[6041]: Auto-saved budget history for user u0: 0 categories from 2025-10
+Nov 30 14:38:56 hermantest npm[6041]: [GET /api-config] Provider: google_gemini
+Nov 30 14:38:56 hermantest npm[6041]: [GET /api-config] No config found for google_gemini
+Nov 30 14:39:00 hermantest npm[6041]: [AI Planning Auth Debug] {
+Nov 30 14:39:00 hermantest npm[6041]:   hasSession: true,
+Nov 30 14:39:00 hermantest npm[6041]:   userId: undefined,
+Nov 30 14:39:00 hermantest npm[6041]:   sessionId: 'ofBkuCoetEc9RxuzQ96JPl73PBl7rfz8',
+Nov 30 14:39:00 hermantest npm[6041]:   cookies: 'NO'
+Nov 30 14:39:00 hermantest npm[6041]: }
+Nov 30 14:39:00 hermantest npm[6041]: [AI Planning Auth Failed] No userId in session
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
