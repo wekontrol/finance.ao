@@ -1,11 +1,13 @@
 import express from 'express';
 import session from 'express-session';
+import MySQLStore from 'express-mysql-session';
 import cors from 'cors';
 import path from 'path';
 import { initializeDatabase } from './db/schema';
 import { initializeSessionsTable } from './db/mysql';
 import dbPool from './db/index';
 import { sqlitePool } from './db/sqlite';
+import { mysqlPoolRaw } from './db/mysql';
 import authRoutes from './routes/auth';
 import transactionRoutes from './routes/transactions';
 import goalRoutes from './routes/goals';
@@ -77,22 +79,48 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const sessionSecret = process.env.SESSION_SECRET || 'gestor-financeiro-secret-key-2024';
 
-// Session store - memory only (development) or MySQL (production)
+// Session store - MySQL in production, memory in development
 let sessionStore: any;
-const MemoryStore = session.MemoryStore;
-sessionStore = new MemoryStore();
-console.log('✅ Using memory session store (development mode)');
+
+if (isProd) {
+  // Production: Use MySQL Store (persistent across restarts)
+  const options = {
+    expiration: 24 * 60 * 60 * 1000, // 24 hours
+    createDatabaseTable: true,
+    schema: {
+      tableName: 'session',
+      columnNames: {
+        session_id: 'sid',
+        expires: 'expire',
+        data: 'sess'
+      }
+    }
+  };
+  
+  try {
+    sessionStore = new MySQLStore(options, mysqlPoolRaw as any);
+    console.log('✅ Using MySQL session store (production - PERSISTENT)');
+  } catch (err) {
+    console.error('❌ Failed to create MySQL session store:', err);
+    console.log('⚠️  Falling back to memory store');
+    sessionStore = new (session.MemoryStore)();
+  }
+} else {
+  // Development: Use memory store
+  sessionStore = new (session.MemoryStore)();
+  console.log('✅ Using memory session store (development mode)');
+}
 
 // Session middleware - must be before route handlers
 app.use(session({
   store: sessionStore,
   secret: sessionSecret,
-  resave: true, // CRITICAL: Set to true for MySQL store
-  saveUninitialized: true, // CRITICAL: Set to true to ensure session is stored
+  resave: false, // Optimized for MySQL store
+  saveUninitialized: false, // Only save initialized sessions
   cookie: {
-    secure: process.env.NODE_ENV === 'production' ? false : false, // Disable secure in production for testing
+    secure: false, // Disable for testing (enable with HTTPS in production)
     httpOnly: true,
-    sameSite: 'lax', // Use lax for all environments to allow cross-origin
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/'
   },
