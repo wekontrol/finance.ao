@@ -3,9 +3,10 @@ import { Pool } from 'pg';
 // PostgreSQL connection pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20, // Connection pool size
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  max: 10, // Reduced connection pool size for stability
+  idleTimeoutMillis: 60000, // Increased idle timeout
+  connectionTimeoutMillis: 10000, // Increased connection timeout
+  statement_timeout: 30000, // Add statement timeout
 });
 
 pool.on('error', (err) => {
