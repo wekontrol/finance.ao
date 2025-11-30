@@ -157,8 +157,8 @@ export async function initializeDatabase() {
         user_id VARCHAR(255) NOT NULL,
         title VARCHAR(255) NOT NULL,
         message VARCHAR(1000) NOT NULL,
-        read TINYINT DEFAULT 0,
-        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        \`read\` TINYINT DEFAULT 0,
+        \`date\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )`,
 
@@ -169,7 +169,7 @@ export async function initializeDatabase() {
         loan_amount DECIMAL(15,2) NOT NULL,
         interest_rate_annual DECIMAL(8,4) NOT NULL,
         term_months INT NOT NULL,
-        system VARCHAR(50) NOT NULL,
+        \`system\` VARCHAR(50) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )`,

@@ -1,6 +1,5 @@
 import express from 'express';
 import session from 'express-session';
-import MySQLStore from 'express-mysql-session';
 import cors from 'cors';
 import path from 'path';
 import { initializeDatabase } from './db/schema';
@@ -80,34 +79,52 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const sessionSecret = process.env.SESSION_SECRET || 'gestor-financeiro-secret-key-2024';
 
 // Session store - MySQL in production, memory in development
-let sessionStore: any;
+let sessionStore: any = new (session.MemoryStore)();
 
 if (isProd) {
-  // Production: Use MySQL Store (persistent across restarts)
-  const options = {
-    expiration: 24 * 60 * 60 * 1000, // 24 hours
-    createDatabaseTable: true,
-    schema: {
-      tableName: 'session',
-      columnNames: {
-        session_id: 'sid',
-        expires: 'expire',
-        data: 'sess'
+  // Production: Use MySQL direct queries for sessions (simple, reliable)
+  class MySQLSessionStore extends session.Store {
+    async get(sid: string, callback: any) {
+      try {
+        const sql = `SELECT sess FROM session WHERE sid = ? AND expire > NOW()`;
+        const [rows]: any = await mysqlPoolRaw.query(sql, [sid]);
+        if (rows && rows.length > 0) {
+          callback(null, JSON.parse(rows[0].sess));
+        } else {
+          callback(null, null);
+        }
+      } catch (err) {
+        callback(err);
       }
     }
-  };
-  
-  try {
-    sessionStore = new MySQLStore(options, mysqlPoolRaw as any);
-    console.log('✅ Using MySQL session store (production - PERSISTENT)');
-  } catch (err) {
-    console.error('❌ Failed to create MySQL session store:', err);
-    console.log('⚠️  Falling back to memory store');
-    sessionStore = new (session.MemoryStore)();
+
+    async set(sid: string, session: any, callback: any) {
+      try {
+        const expire = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const sql = `INSERT INTO session (sid, sess, expire) VALUES (?, ?, ?) 
+                     ON DUPLICATE KEY UPDATE sess = VALUES(sess), expire = VALUES(expire)`;
+        await mysqlPoolRaw.query(sql, [sid, JSON.stringify(session), expire]);
+        callback();
+      } catch (err) {
+        callback(err);
+      }
+    }
+
+    async destroy(sid: string, callback: any) {
+      try {
+        const sql = `DELETE FROM session WHERE sid = ?`;
+        await mysqlPoolRaw.query(sql, [sid]);
+        callback();
+      } catch (err) {
+        callback(err);
+      }
+    }
   }
+
+  sessionStore = new MySQLSessionStore();
+  console.log('✅ Using MySQL session store (production - PERSISTENT)');
 } else {
   // Development: Use memory store
-  sessionStore = new (session.MemoryStore)();
   console.log('✅ Using memory session store (development mode)');
 }
 
