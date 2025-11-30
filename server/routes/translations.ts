@@ -90,7 +90,7 @@ router.get('/editor/all', requireTranslatorOrAdmin, async (req: Request, res: Re
 
 // Save translation
 router.post('/', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
-  const userId = req.session.userId;
+  const userId = req.session.userId || 'u0'; // Default to admin if not set
   const { language, key, value } = req.body;
 
   if (!language || !key || !value) {
@@ -104,14 +104,14 @@ router.post('/', requireTranslatorOrAdmin, async (req: Request, res: Response) =
       INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
       VALUES ($1, $2, $3, $4, $5, NOW(), 'active')
       ON CONFLICT (language, key) DO UPDATE SET
-        value = EXCLUDED.value,
-        created_by = EXCLUDED.created_by,
+        value = $3,
         updated_at = NOW(),
         status = 'active'
     `, [id, language, key, value, userId]);
 
     res.status(201).json({ id, language, key, value });
   } catch (error: any) {
+    console.error('[POST /translations] Error:', error);
     res.status(400).json({ error: error.message });
   }
 });
