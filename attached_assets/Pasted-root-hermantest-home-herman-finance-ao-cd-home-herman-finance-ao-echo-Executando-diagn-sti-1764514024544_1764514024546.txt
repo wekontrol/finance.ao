@@ -1,0 +1,85 @@
+root@hermantest:/home/herman/finance.ao# cd /home/herman/finance.ao
+
+echo "📋 Executando diagnóstico..."
+curl -s https://raw.githubusercontent.com/wekontrol/finance.ao/main/diagnose.sh | bash
+
+# Se não funcionar, tenta isto:
+sudo bash diagnose.sh
+📋 Executando diagnóstico...
+🔍 DIAGNÓSTICO DO GESTOR FINANCEIRO
+═════════════════════════════════════════════
+
+1️⃣  Status do Serviço:
+     Active: active (running) since Sun 2025-11-30 14:29:10 UTC; 17min ago
+
+2️⃣  Variáveis de Ambiente:
+  ✓ Arquivo .env.production existe
+  DATABASE_URL está configurado:
+DATABASE_URL=postgresql://gestor_user:RuN5QBer0sMoOTX2@localhost:5432/gestor_financeiro
+
+3️⃣  PostgreSQL:
+  ✓ PostgreSQL instalado
+     Active: active (exited) since Sun 2025-11-30 13:33:21 UTC; 1h 13min ago
+
+4️⃣  Aplicação Node.js:
+  ✓ Node.js: v20.19.6
+  ✓ NPM: 10.8.2
+
+5️⃣  Teste de Conexão com Banco de Dados:
+  ✓ Conexão com banco de dados: OK
+
+6️⃣  Últimos Erros (últimos 10 linhas):
+Nov 30 14:38:56 hermantest npm[6041]: [GET /api-config] Provider: google_gemini
+Nov 30 14:38:56 hermantest npm[6041]: [GET /api-config] No config found for google_gemini
+Nov 30 14:39:00 hermantest npm[6041]: [AI Planning Auth Debug] {
+Nov 30 14:39:00 hermantest npm[6041]:   hasSession: true,
+Nov 30 14:39:00 hermantest npm[6041]:   userId: undefined,
+Nov 30 14:39:00 hermantest npm[6041]:   sessionId: 'ofBkuCoetEc9RxuzQ96JPl73PBl7rfz8',
+Nov 30 14:39:00 hermantest npm[6041]:   cookies: 'NO'
+Nov 30 14:39:00 hermantest npm[6041]: }
+Nov 30 14:39:00 hermantest npm[6041]: [AI Planning Auth Failed] No userId in session
+Nov 30 14:43:46 hermantest npm[6041]: [GET /rates] Live rates fetched. USD->AOA: 914.77623369
+
+═════════════════════════════════════════════
+Se tiver problemas, execute:
+  sudo journalctl -u gestor-financeiro -f
+para ver os logs em tempo real
+🔍 DIAGNÓSTICO DO GESTOR FINANCEIRO
+═════════════════════════════════════════════
+
+1️⃣  Status do Serviço:
+     Active: active (running) since Sun 2025-11-30 14:29:10 UTC; 17min ago
+
+2️⃣  Variáveis de Ambiente:
+  ✓ Arquivo .env.production existe
+  DATABASE_URL está configurado:
+DATABASE_URL=postgresql://gestor_user:RuN5QBer0sMoOTX2@localhost:5432/gestor_financeiro
+
+3️⃣  PostgreSQL:
+  ✓ PostgreSQL instalado
+     Active: active (exited) since Sun 2025-11-30 13:33:21 UTC; 1h 13min ago
+
+4️⃣  Aplicação Node.js:
+  ✓ Node.js: v20.19.6
+  ✓ NPM: 10.8.2
+
+5️⃣  Teste de Conexão com Banco de Dados:
+  ✓ Conexão com banco de dados: OK
+
+6️⃣  Últimos Erros (últimos 10 linhas):
+Nov 30 14:38:56 hermantest npm[6041]: [GET /api-config] Provider: google_gemini
+Nov 30 14:38:56 hermantest npm[6041]: [GET /api-config] No config found for google_gemini
+Nov 30 14:39:00 hermantest npm[6041]: [AI Planning Auth Debug] {
+Nov 30 14:39:00 hermantest npm[6041]:   hasSession: true,
+Nov 30 14:39:00 hermantest npm[6041]:   userId: undefined,
+Nov 30 14:39:00 hermantest npm[6041]:   sessionId: 'ofBkuCoetEc9RxuzQ96JPl73PBl7rfz8',
+Nov 30 14:39:00 hermantest npm[6041]:   cookies: 'NO'
+Nov 30 14:39:00 hermantest npm[6041]: }
+Nov 30 14:39:00 hermantest npm[6041]: [AI Planning Auth Failed] No userId in session
+Nov 30 14:43:46 hermantest npm[6041]: [GET /rates] Live rates fetched. USD->AOA: 914.77623369
+
+═════════════════════════════════════════════
+Se tiver problemas, execute:
+  sudo journalctl -u gestor-financeiro -f
+para ver os logs em tempo real
+root@hermantest:/home/herman/finance.ao#
