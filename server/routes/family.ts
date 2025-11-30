@@ -141,7 +141,7 @@ router.get('/events', async (req: Request, res: Response) => {
   const user = req.session.user;
 
   const result = await pgPool.query(`
-    SELECT * FROM family_events WHERE family_id = ? ORDER BY date ASC
+    SELECT * FROM family_events WHERE family_id = ? ORDER BY \`date\` ASC
   `, [user.familyId]);
 
   const formattedEvents = result.rows.map((e: any) => ({
@@ -166,7 +166,7 @@ router.post('/events', async (req: Request, res: Response) => {
   const id = uuidv4();
   
   await pgPool.query(`
-    INSERT INTO family_events (id, family_id, title, date, type, description)
+    INSERT INTO family_events (id, family_id, title, \`date\`, type, description)
     VALUES (?, ?, ?, ?, ?, ?)
   `, [id, user.familyId, title, date, type || 'general', description || null]);
 

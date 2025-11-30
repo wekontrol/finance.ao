@@ -65,7 +65,7 @@ export async function processRecurringTransactions() {
   for (const t of dueTransactions) {
     const newId = uuidv4();
     await pgPool.query(`
-      INSERT INTO transactions (id, user_id, description, amount, date, category, type, is_recurring, frequency)
+      INSERT INTO transactions (id, user_id, description, amount, \`date\`, category, type, is_recurring, frequency)
       VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL)
     `, [newId, t.user_id, t.description, t.amount, today, t.category, t.type]);
 
@@ -119,7 +119,7 @@ router.get('/', async (req: Request, res: Response) => {
       SELECT t.*, u.name as user_name 
       FROM transactions t
       LEFT JOIN users u ON t.user_id = u.id
-      ORDER BY t.date DESC
+      ORDER BY t.\`date\` DESC
     `);
     transactions = result.rows;
   } else if (user.role === 'MANAGER') {
@@ -128,7 +128,7 @@ router.get('/', async (req: Request, res: Response) => {
       FROM transactions t
       LEFT JOIN users u ON t.user_id = u.id
       WHERE u.family_id = ?
-      ORDER BY t.date DESC
+      ORDER BY t.\`date\` DESC
     `, [user.familyId]);
 
     const allFamilyTransactions = result.rows;
@@ -147,7 +147,7 @@ router.get('/', async (req: Request, res: Response) => {
       FROM transactions t
       LEFT JOIN users u ON t.user_id = u.id
       WHERE t.user_id = ? 
-      ORDER BY t.date DESC
+      ORDER BY t.\`date\` DESC
     `, [userId]);
     transactions = result.rows;
   }

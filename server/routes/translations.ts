@@ -57,8 +57,8 @@ router.get('/language/:language', async (req: Request, res: Response) => {
     const { language } = req.params;
     
     const translationsResult = await pgPool.query(`
-      SELECT key, value FROM translations WHERE language = ? AND status = 'active'
-      ORDER BY key
+      SELECT \`key\`, \`value\` FROM translations WHERE language = ? AND status = 'active'
+      ORDER BY \`key\`
     `, [language]);
 
     const result: Record<string, string> = {};
@@ -76,10 +76,10 @@ router.get('/language/:language', async (req: Request, res: Response) => {
 router.get('/editor/all', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   try {
     const result = await pgPool.query(`
-      SELECT DISTINCT language, key, value, created_by, updated_at
+      SELECT DISTINCT language, \`key\`, \`value\`, created_by, updated_at
       FROM translations
       WHERE status = 'active'
-      ORDER BY language, key
+      ORDER BY language, \`key\`
     `);
 
     res.json(result.rows);
@@ -102,10 +102,10 @@ router.post('/', requireTranslatorOrAdmin, async (req: Request, res: Response) =
   try {
     const now = new Date().toISOString();
     await pgPool.query(`
-      INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
+      INSERT INTO translations (id, language, \`key\`, \`value\`, created_by, updated_at, status)
       VALUES (?, ?, ?, ?, ?, ?, 'active')
       ON DUPLICATE KEY UPDATE
-        value = ?,
+        \`value\` = ?,
         updated_at = ?,
         status = 'active'
     `, [id, language, key, value, userId, now, value, now]);
@@ -130,13 +130,13 @@ router.post('/language/add', requireTranslatorOrAdmin, async (req: Request, res:
     // If baseLanguage provided, copy translations from base
     if (baseLanguage) {
       const baseResult = await pgPool.query(`
-        SELECT key, value FROM translations WHERE language = ? AND status = 'active'
+        SELECT \`key\`, \`value\` FROM translations WHERE language = ? AND status = 'active'
       `, [baseLanguage]);
 
       for (const t of baseResult.rows) {
         const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
         await pgPool.query(`
-          INSERT IGNORE INTO translations (id, language, key, value, created_by, status)
+          INSERT IGNORE INTO translations (id, language, \`key\`, \`value\`, created_by, status)
           VALUES (?, ?, ?, ?, ?, 'active')
         `, [id, language, t.key, t.value, userId]);
       }
@@ -158,7 +158,7 @@ router.post('/language/add', requireTranslatorOrAdmin, async (req: Request, res:
 router.get('/export', requireTranslatorOrAdmin, async (req: Request, res: Response) => {
   try {
     const translationsResult = await pgPool.query(`
-      SELECT language, key, value FROM translations WHERE status = 'active' ORDER BY language, key
+      SELECT language, \`key\`, \`value\` FROM translations WHERE status = 'active' ORDER BY language, \`key\`
     `);
 
     const translations = translationsResult.rows;

@@ -262,7 +262,7 @@ router.post('/import', requireAuth, async (req: Request, res: Response) => {
 
 router.get('/logo', async (req: Request, res: Response) => {
   try {
-    const result = await pgPool.query('SELECT value FROM app_settings WHERE key = ?', ['app_logo']);
+    const result = await pgPool.query('SELECT \`value\` FROM app_settings WHERE \`key\` = ?', ['app_logo']);
     const logo = result.rows[0];
     if (logo && logo.value) {
       res.json({ logo: logo.value });
@@ -286,9 +286,9 @@ router.post('/logo', async (req: Request, res: Response) => {
 
   try {
     await pgPool.query(
-      `INSERT INTO app_settings (key, value)
+      `INSERT INTO app_settings (\`key\`, \`value\`)
        VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE value = VALUES(value`,
+       ON DUPLICATE KEY UPDATE \`value\` = VALUES(\`value\`)`,
       ['app_logo', logo]
     );
 

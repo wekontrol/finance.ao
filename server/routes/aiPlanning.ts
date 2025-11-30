@@ -146,7 +146,7 @@ router.get('/analyze', async (req: Request, res: Response) => {
         category,
         SUM(CASE WHEN type = 'DESPESA' THEN amount ELSE 0 END) as spent
       FROM transactions
-      WHERE user_id = ? AND type = 'DESPESA' AND date LIKE ?
+      WHERE user_id = ? AND type = 'DESPESA' AND \`date\` LIKE ?
       GROUP BY category
     `, [userId, `${currentMonth}%`]);
 
@@ -420,7 +420,7 @@ async function calculateMonthlyContribution(goalId: string): Promise<number> {
   const result = await pgPool.query(`
     SELECT SUM(amount) as total
     FROM goal_transactions
-    WHERE goal_id = ? AND date >= ?
+    WHERE goal_id = ? AND \`date\` >= ?
   `, [goalId, fromDate]);
 
   return parseFloat(result.rows[0]?.total) || 0;

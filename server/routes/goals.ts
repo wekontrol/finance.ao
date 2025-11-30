@@ -32,7 +32,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     const formattedGoals = await Promise.all(goals.map(async (g: any) => {
       const historyResult = await pgPool.query(`
-        SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY date DESC
+        SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY \`date\` DESC
       `, [g.id]);
 
       const history = historyResult.rows;

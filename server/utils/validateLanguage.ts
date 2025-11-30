@@ -5,7 +5,7 @@ import pool from '../db/index';
  */
 export async function getBaseLanguageKeys(): Promise<Set<string>> {
   const result = await pool.query(`
-    SELECT DISTINCT key FROM translations WHERE language = 'pt' AND status = 'active'
+    SELECT DISTINCT \`key\` FROM translations WHERE language = 'pt' AND status = 'active'
   `);
   
   return new Set(result.rows.map((t: any) => t.key));
@@ -16,7 +16,7 @@ export async function getBaseLanguageKeys(): Promise<Set<string>> {
  */
 export async function getLanguageKeys(language: string): Promise<Set<string>> {
   const result = await pool.query(`
-    SELECT DISTINCT key FROM translations WHERE language = ? AND status = 'active'
+    SELECT DISTINCT \`key\` FROM translations WHERE language = ? AND status = 'active'
   `, [language]);
   
   return new Set(result.rows.map((t: any) => t.key));

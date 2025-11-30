@@ -23,9 +23,9 @@ router.post('/', async (req: Request, res: Response) => {
   const { key, value } = req.body;
   try {
     await pgPool.query(`
-      INSERT INTO app_settings (key, value) 
+      INSERT INTO app_settings (\`key\`, \`value\`) 
       VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE value = ?
+      ON DUPLICATE KEY UPDATE \`value\` = ?
     `, [key, value, value]);
     res.json({ success: true });
   } catch (error: any) {

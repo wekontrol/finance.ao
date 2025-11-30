@@ -77,7 +77,7 @@ export async function createDefaultBudgetsForUser(userId: string): Promise<numbe
 export async function autoSaveMonthlyHistory(userId: string) {
   try {
     const lastSaveResult = await pgPool.query(
-      `SELECT value FROM app_settings WHERE key = ?`,
+      `SELECT \`value\` FROM app_settings WHERE \`key\` = ?`,
       [`budget_history_saved_${userId}`]
     );
 
@@ -96,7 +96,7 @@ export async function autoSaveMonthlyHistory(userId: string) {
       const transactionsResult = await pgPool.query(
         `SELECT category, SUM(amount) as total
          FROM transactions
-         WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < DATE_ADD(?, INTERVAL 1 MONTH)
+         WHERE user_id = ? AND type = 'DESPESA' AND \`date\` >= ? AND \`date\` < DATE_ADD(?, INTERVAL 1 MONTH)
          GROUP BY category`,
         [userId, `${previousMonth}-01`, `${previousMonth}-01`]
       );
@@ -128,8 +128,8 @@ export async function autoSaveMonthlyHistory(userId: string) {
       }
 
       await pgPool.query(
-        `INSERT INTO app_settings (key, value) VALUES (?, ?)
-         ON DUPLICATE KEY UPDATE value = VALUES(value)`,
+        `INSERT INTO app_settings (\`key\`, \`value\`) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE \`value\` = VALUES(\`value\`)`,
         [`budget_history_saved_${userId}`, currentMonth]
       );
 
