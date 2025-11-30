@@ -69,28 +69,74 @@ if ! command -v psql &> /dev/null; then
     sudo apt-get install -y postgresql postgresql-contrib
 fi
 
-# Solicitar string de conexão PostgreSQL
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "CONFIGURAÇÃO DO POSTGRESQL"
-echo "═══════════════════════════════════════════════════════════"
-echo ""
-echo "Você precisa fornecer a string de conexão do PostgreSQL."
-echo "Formato: postgresql://user:password@host:5432/database"
-echo ""
-echo "Exemplos:"
-echo "  - Local: postgresql://postgres:senha@localhost:5432/gestor_financeiro"
-echo "  - Render: postgresql://user:pass@render-host.com:5432/db"
-echo ""
-read -p "Cole a string PostgreSQL (TheFinance): " POSTGRES_URL
+# Iniciar serviço PostgreSQL
+echo "Iniciando PostgreSQL..."
+sudo systemctl start postgresql || true
+sudo systemctl enable postgresql || true
 
-if [ -z "$POSTGRES_URL" ]; then
-    echo "⚠️  PostgreSQL não configurado. Usando memory store (não recomendado para produção)."
-    POSTGRES_ENV=""
-else
-    echo "✓ PostgreSQL configurado!"
-    POSTGRES_ENV="Environment=\"TheFinance=$POSTGRES_URL\""
-fi
+# Configurar PostgreSQL automaticamente
+echo "Configurando base de dados PostgreSQL..."
+
+# Nome da base de dados e usuário
+DB_NAME="gestor_financeiro"
+DB_USER="gestor_user"
+DB_PASSWORD="$(openssl rand -base64 16)"  # Senha aleatória segura
+DB_HOST="localhost"
+DB_PORT="5432"
+
+# Criar usuário e base de dados
+sudo -u postgres psql <<EOF || true
+CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+ALTER USER $DB_USER CREATEDB;
+DROP DATABASE IF EXISTS $DB_NAME;
+CREATE DATABASE $DB_NAME OWNER $DB_USER;
+ALTER DATABASE $DB_NAME OWNER TO $DB_USER;
+GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+EOF
+
+# Gerar string de conexão
+POSTGRES_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+
+# Salvar credenciais num ficheiro seguro
+CREDS_FILE="$APP_DIR/.postgres-credentials.txt"
+sudo tee $CREDS_FILE > /dev/null <<EOF
+═══════════════════════════════════════════════════════════
+CREDENCIAIS DO POSTGRESQL - GUARDAR COM SEGURANÇA
+═══════════════════════════════════════════════════════════
+Utilizador: $DB_USER
+Senha: $DB_PASSWORD
+Base de dados: $DB_NAME
+Host: $DB_HOST
+Porta: $DB_PORT
+
+String de conexão:
+$POSTGRES_URL
+═══════════════════════════════════════════════════════════
+EOF
+
+sudo chmod 600 $CREDS_FILE
+sudo chown $APP_USER:$APP_USER $CREDS_FILE
+
+# Mostrar credenciais durante a configuração
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "✓ PostgreSQL configurado automaticamente!"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+echo "CREDENCIAIS GERADAS (guardar num local seguro):"
+echo "  Utilizador: $DB_USER"
+echo "  Senha: $DB_PASSWORD"
+echo "  Base de dados: $DB_NAME"
+echo "  Host: $DB_HOST"
+echo "  Porta: $DB_PORT"
+echo ""
+echo "String de conexão:"
+echo "  $POSTGRES_URL"
+echo ""
+echo "⚠️  As credenciais foram salvas em: .postgres-credentials.txt"
+echo ""
+
+POSTGRES_ENV="Environment=\"TheFinance=$POSTGRES_URL\""
 
 # Cria arquivo de serviço systemd
 sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<EOF
