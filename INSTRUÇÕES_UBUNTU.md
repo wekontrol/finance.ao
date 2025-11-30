@@ -13,7 +13,13 @@ A variável `DATABASE_URL` não estava sendo passada corretamente ao serviço sy
 
 ## 🔧 PASSOS PARA DEPLOY
 
-### 1. No teu Ubuntu, execute:
+### 1. Clone o repositório:
+```bash
+git clone https://github.com/wekontrol/finance.ao
+cd finance.ao
+```
+
+### 2. Execute o deploy:
 ```bash
 sudo bash deploy.sh
 ```
