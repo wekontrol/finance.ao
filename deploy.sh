@@ -76,7 +76,7 @@ echo "Configurando base de dados PostgreSQL..."
 
 DB_NAME="gestor_financeiro"
 DB_USER="gestor_user"
-DB_PASSWORD="$(openssl rand -base64 16)"
+DB_PASSWORD="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)"
 DB_HOST="localhost"
 DB_PORT="5432"
 
@@ -126,11 +126,12 @@ echo ""
 
 # Criar arquivo .env.production com variáveis
 ENV_FILE="$APP_DIR/.env.production"
+SESSION_SECRET="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)"
 sudo tee $ENV_FILE > /dev/null <<ENVEOF
 NODE_ENV=production
 PORT=5000
 DATABASE_URL=$POSTGRES_URL
-SESSION_SECRET=$(openssl rand -base64 32)
+SESSION_SECRET=$SESSION_SECRET
 ENVEOF
 
 sudo chmod 600 $ENV_FILE
