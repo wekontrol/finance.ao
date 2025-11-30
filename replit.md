@@ -6,6 +6,13 @@ A comprehensive family financial management platform built with React, TypeScrip
 ## User Preferences
 Fast Mode development - small focused edits preferred.
 
+## Recent Changes (Nov 30, 2025)
+- **Fixed 401 Unauthorized in AI Planning:** Corrected database connection from `TheFinance` to `DATABASE_URL` environment variable
+- **Configured Session Cookies:** Updated cookie configuration for development (sameSite: 'lax', secure: false) to properly handle cross-port sessions between Vite (5000) and Express (3001)
+- **PostgreSQL Database:** Set up with Replit's built-in database, all tables created and initialized
+- **User Isolation:** Verified that all data (transactions, budgets, goals, AI analysis) is properly isolated per user with secure queries
+- **Multi-User Support:** Confirmed that new users can create accounts and access AI Planning without 401 errors after authentication
+
 ## System Architecture
 
 ### UI/UX Decisions
