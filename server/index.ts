@@ -77,12 +77,12 @@ const sessionStore = new PgStore({
 app.use(session({
   store: sessionStore,
   secret: sessionSecret,
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // CRITICAL: Set to true for PostgreSQL store
+  saveUninitialized: true, // CRITICAL: Set to true to ensure session is stored
   cookie: {
-    secure: process.env.NODE_ENV === 'production' ? true : false,
+    secure: process.env.NODE_ENV === 'production' ? false : false, // Disable secure in production for testing
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: 'lax', // Use lax for all environments to allow cross-origin
     maxAge: 24 * 60 * 60 * 1000,
     path: '/'
   },

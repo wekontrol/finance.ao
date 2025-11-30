@@ -18,14 +18,25 @@ export async function initializeSessionsTable() {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS session (
-        sid varchar NOT NULL COLLATE "default",
+        sid varchar NOT NULL,
         sess json NOT NULL,
         expire timestamp(6) NOT NULL,
         PRIMARY KEY (sid)
       );
-      CREATE INDEX IF NOT EXISTS IDX_session_expire on session (expire);
+      CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire);
     `);
-    console.log('PostgreSQL sessions table initialized');
+    
+    // Verify table was created
+    const result = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'session'
+      );
+    `);
+    
+    if (result.rows[0].exists) {
+      console.log('✅ PostgreSQL sessions table initialized');
+    }
   } catch (error) {
     console.error('Error initializing sessions table:', error);
   }

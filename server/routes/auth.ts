@@ -48,9 +48,17 @@ router.post('/login', async (req: Request, res: Response) => {
     req.session.userId = user.id;
     req.session.user = userWithoutPassword;
 
-    autoSaveMonthlyHistory(user.id);
-
-    res.json({ user: userWithoutPassword });
+    // Force session save for PostgreSQL store
+    req.session.save((err: any) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Session save failed' });
+      }
+      
+      console.log(`✅ User ${user.id} logged in successfully, session saved`);
+      autoSaveMonthlyHistory(user.id);
+      res.json({ user: userWithoutPassword });
+    });
   } catch (error: any) {
     console.error('Login error:', error.message);
     return res.status(500).json({ error: 'Login failed', details: error.message });
