@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
-import pgPool from '../db/postgres';
+import pgPool from '../db';
 
 const router = Router();
 

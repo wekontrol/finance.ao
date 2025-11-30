@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import pgPool from '../db/postgres';
+import pgPool from '../db';
 import ExcelJS from 'exceljs';
 
 const router = Router();

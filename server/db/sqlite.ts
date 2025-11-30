@@ -94,9 +94,92 @@ class SQLitePool {
         expire DATETIME NOT NULL
       )`,
 
+      `CREATE TABLE IF NOT EXISTS app_settings (
+        key VARCHAR(255) PRIMARY KEY,
+        value TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS savings_goals (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+        name VARCHAR(255) NOT NULL,
+        target_amount DECIMAL(10, 2),
+        current_amount DECIMAL(10, 2) DEFAULT 0,
+        deadline DATE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS goal_transactions (
+        id VARCHAR(255) PRIMARY KEY,
+        goal_id VARCHAR(255) NOT NULL REFERENCES savings_goals(id),
+        amount DECIMAL(10, 2),
+        date DATE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS budget_monthly_history (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+        month VARCHAR(7),
+        category VARCHAR(255),
+        spent DECIMAL(10, 2) DEFAULT 0,
+        limit_amount DECIMAL(10, 2),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS family_tasks (
+        id VARCHAR(255) PRIMARY KEY,
+        family_id VARCHAR(255) NOT NULL REFERENCES families(id),
+        title VARCHAR(255),
+        description TEXT,
+        assigned_to VARCHAR(255),
+        status VARCHAR(50) DEFAULT 'PENDING',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS notifications (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+        title VARCHAR(255),
+        message TEXT,
+        type VARCHAR(50),
+        read BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+        subscription TEXT,
+        last_active DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS translations (
+        id VARCHAR(255) PRIMARY KEY,
+        language VARCHAR(10),
+        key VARCHAR(255),
+        value TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS ai_analysis_cache (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+        month VARCHAR(7),
+        analysis_data TEXT,
+        expires_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
       `CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date)`,
       `CREATE INDEX IF NOT EXISTS idx_budget_user_category ON budget_limits(user_id, category)`,
-      `CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire)`
+      `CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire)`,
+      `CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings(key)`,
+      `CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_translations_lang_key ON translations(language, key)`,
+      `CREATE INDEX IF NOT EXISTS idx_ai_cache_user_month ON ai_analysis_cache(user_id, month)`
     ];
 
     return new Promise((resolve, reject) => {

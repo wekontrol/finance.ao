@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import pgPool from '../db/postgres';
-import { sqlitePool } from '../db/sqlite';
+import pgPool from '../db';
 import { findUserByUsername as findUserInMemory } from '../db/inmemory';
 import { autoSaveMonthlyHistory } from './budget';
 

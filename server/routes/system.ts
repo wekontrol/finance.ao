@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
-import pgPool from '../db/postgres';
+import pgPool from '../db';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 

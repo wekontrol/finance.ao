@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import pgPool from '../db/postgres';
+import pgPool from '../db';
 
 const router = Router();
 

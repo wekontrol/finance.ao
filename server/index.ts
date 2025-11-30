@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { initializeDatabase } from './db/schema';
 import pgPool, { initializeSessionsTable } from './db/postgres';
+import dbPool from './db/index';
 import { sqlitePool } from './db/sqlite';
 import ConnectPgSimple from 'connect-pg-simple';
 import authRoutes from './routes/auth';
