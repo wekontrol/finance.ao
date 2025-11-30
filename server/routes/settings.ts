@@ -170,7 +170,7 @@ router.delete('/api-config/:provider', async (req: Request, res: Response) => {
 // Get default AI provider
 router.get('/default-ai-provider', async (req: Request, res: Response) => {
   try {
-    const result = await pgPool.query(`SELECT provider FROM api_configurations WHERE is_default = true`);
+    const result = await pgPool.query(`SELECT provider FROM api_configurations WHERE is_default = 1`);
     const config = result.rows[0] as { provider: string } | undefined;
     res.json({ provider: config?.provider || 'google_gemini' });
   } catch (error: any) {
@@ -185,9 +185,9 @@ router.post('/default-ai-provider', async (req: Request, res: Response) => {
   console.log('[POST /default-ai-provider] Setting:', provider);
   try {
     // Unset all others
-    await pgPool.query(`UPDATE api_configurations SET is_default = false`);
+    await pgPool.query(`UPDATE api_configurations SET is_default = 0`);
     // Set this one
-    await pgPool.query(`UPDATE api_configurations SET is_default = true WHERE provider = $1`, [provider]);
+    await pgPool.query(`UPDATE api_configurations SET is_default = 1 WHERE provider = $1`, [provider]);
     console.log('[POST /default-ai-provider] Set successfully');
     res.json({ success: true });
   } catch (error: any) {

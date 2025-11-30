@@ -111,14 +111,14 @@ router.post('/', async (req: Request, res: Response) => {
     req.session.userId,
     newFamilyId,
     birthDate || null,
-    allowParentView ? true : false
+    allowParentView ? 1 : 0
   ]);
 
   for (const budget of defaultBudgets) {
     const budgetId = `bl${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
     await pgPool.query(`
       INSERT INTO budget_limits (id, user_id, category, limit_amount, is_default)
-      VALUES ($1, $2, $3, $4, true)
+      VALUES ($1, $2, $3, $4, 1)
     `, [budgetId, id, budget.category, budget.limit]);
   }
 

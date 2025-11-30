@@ -53,7 +53,7 @@ export async function processRecurringTransactions() {
 
   const dueResult = await pgPool.query(`
     SELECT * FROM transactions
-    WHERE is_recurring = true AND next_due_date IS NOT NULL AND next_due_date <= $1
+    WHERE is_recurring = 1 AND next_due_date IS NOT NULL AND next_due_date <= $1
   `, [today]);
   
   const dueTransactions = dueResult.rows;
@@ -66,7 +66,7 @@ export async function processRecurringTransactions() {
     const newId = uuidv4();
     await pgPool.query(`
       INSERT INTO transactions (id, user_id, description, amount, date, category, type, is_recurring, frequency)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, false, NULL)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 0, NULL)
     `, [newId, t.user_id, t.description, t.amount, today, t.category, t.type]);
 
     const nextDueDate = calculateNextDueDate(t.next_due_date, t.frequency);
