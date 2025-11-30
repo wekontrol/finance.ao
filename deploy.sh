@@ -2,6 +2,9 @@
 set -e
 export DEBIAN_FRONTEND=noninteractive
 
+# Ensure this script has execution permissions
+chmod +x "$0" 2>/dev/null || true
+
 echo ">>> [1/7] Atualizando sistema..."
 sudo apt-get update
 sudo apt-get install -y curl git build-essential
@@ -36,9 +39,10 @@ cd $APP_DIR
 sudo chmod +x init-db.sh deploy.sh
 
 echo ">>> [5/7] Instalando dependências npm..."
+cd $APP_DIR
 sudo -u $APP_USER sh -c 'rm -rf node_modules dist package-lock.json' || true
 
-if ! sudo -u $APP_USER npm install 2>&1 | tail -5; then
+if ! sudo -u $APP_USER npm install --legacy-peer-deps 2>&1 | tail -5; then
     echo "ERRO: npm install falhou!"
     exit 1
 fi
@@ -98,7 +102,13 @@ echo "Base de dados: $DB_NAME"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-echo ">>> [7/7] Criando serviço systemd..."
+echo ">>> [7/7] Finalizando configuração..."
+
+# Fix any permission issues
+sudo chmod +x $APP_DIR/init-db.sh $APP_DIR/deploy.sh 2>/dev/null || true
+sudo chown -R $APP_USER:$APP_USER $APP_DIR/node_modules 2>/dev/null || true
+
+echo "Criando serviço systemd..."
 sudo tee /etc/systemd/system/gestor-financeiro.service > /dev/null <<'SYSTEMDEOF'
 [Unit]
 Description=Gestor Financeiro Familiar - Node.js Application
