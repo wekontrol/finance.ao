@@ -266,6 +266,12 @@ export async function initializeDatabase() {
     const adminResult = await pgPool.query('SELECT id FROM users WHERE username = $1', ['admin']);
     
     if (adminResult.rows.length === 0) {
+      // First create the admin family
+      await pgPool.query(
+        `INSERT INTO families (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+        ['fam_admin', 'Admin Family']
+      );
+      
       const hashedPassword = bcrypt.hashSync('admin', 10);
       await pgPool.query(
         `INSERT INTO users (id, username, password, name, role, avatar, status, family_id)

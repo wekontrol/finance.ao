@@ -9,8 +9,7 @@ A comprehensive family financial management platform built with React, TypeScrip
 - **Node.js Version:** 20.x
 - **Frontend Server:** Vite dev server on port 5000 (0.0.0.0:5000)
 - **Backend Server:** Express.js on port 3001 (localhost:3001)
-- **Database (Dev):** SQLite (data.db) for development
-- **Database (Prod):** PostgreSQL (Neon-backed) for production
+- **Database:** PostgreSQL (Neon-backed) for both development and production
 - **Workflow:** `npm run dev` - runs both frontend and backend concurrently
 
 ### Configuration Files
@@ -219,5 +218,15 @@ The application features a fully translated user interface with dynamic language
     -   `ExcelJS`
     -   `@tanstack/react-query`
     -   `recharts`
--   **Database:** PostgreSQL with Neon backend.
+-   **Database:** PostgreSQL (Neon-backed) for both development and production environments.
 -   **Currency API:** Fawaz Ahmed Currency API (`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`).
+
+## Migration to PostgreSQL-Only (November 30, 2025)
+The project was migrated from a dual SQLite/PostgreSQL setup to PostgreSQL-only. This ensures consistency between development and production environments.
+
+### Key Changes:
+- Removed `better-sqlite3` dependency
+- All route files now use `pgPool.query()` instead of SQLite's `db.prepare()`
+- All SQL uses PostgreSQL syntax (`$1, $2` placeholders instead of `?`)
+- Session storage uses PostgreSQL for both development and production
+- All INSERT OR REPLACE statements converted to PostgreSQL's ON CONFLICT syntax
