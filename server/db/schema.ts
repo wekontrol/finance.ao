@@ -1,11 +1,13 @@
-import pgPool from './postgres';
+import pgPool from './index';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 
 export async function initializeDatabase() {
   try {
-    // Create all tables using PostgreSQL
+    // Create all tables
+    // Note: This uses pgPool from postgres directly (not the wrapper)
+    // because schema initialization only happens in production (PostgreSQL)
     await pgPool.query(`
       CREATE TABLE IF NOT EXISTS families (
         id TEXT PRIMARY KEY,

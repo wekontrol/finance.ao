@@ -96,9 +96,9 @@ export async function autoSaveMonthlyHistory(userId: string) {
       const transactionsResult = await pgPool.query(
         `SELECT category, SUM(amount) as total
          FROM transactions
-         WHERE user_id = $1 AND type = 'DESPESA' AND date LIKE $2
+         WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < datetime(?, '+1 month')
          GROUP BY category`,
-        [userId, `${previousMonth}%`]
+        [userId, `${previousMonth}-01`, `${previousMonth}-01`]
       );
       const transactions = transactionsResult.rows;
 
@@ -317,9 +317,9 @@ router.get('/summary', async (req: Request, res: Response) => {
   const transactionsResult = await pgPool.query(
     `SELECT category, SUM(amount) as total
      FROM transactions
-     WHERE user_id = $1 AND type = 'DESPESA' AND date LIKE $2
+     WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < datetime(?, '+1 month')
      GROUP BY category`,
-    [userId, `${currentMonth}%`]
+    [userId, `${currentMonth}-01`, `${currentMonth}-01`]
   );
   const transactions = transactionsResult.rows;
 
@@ -387,9 +387,9 @@ router.post('/history/save', async (req: Request, res: Response) => {
     const transactionsResult = await pgPool.query(
       `SELECT category, SUM(amount) as total
        FROM transactions
-       WHERE user_id = $1 AND type = 'DESPESA' AND date LIKE $2
+       WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < datetime(?, '+1 month')
        GROUP BY category`,
-      [userId, `${currentMonth}%`]
+      [userId, `${currentMonth}-01`, `${currentMonth}-01`]
     );
     const transactions = transactionsResult.rows;
 

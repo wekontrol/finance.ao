@@ -412,11 +412,16 @@ function calculateMonthsRemaining(deadline: string): number {
 }
 
 async function calculateMonthlyContribution(goalId: string): Promise<number> {
+  // Calcular data de 1 mês atrás
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const fromDate = oneMonthAgo.toISOString().split('T')[0];
+
   const result = await pgPool.query(`
     SELECT SUM(amount) as total
     FROM goal_transactions
-    WHERE goal_id = $1 AND date >= NOW() - INTERVAL '1 month'
-  `, [goalId]);
+    WHERE goal_id = ? AND date >= ?
+  `, [goalId, fromDate]);
 
   return parseFloat(result.rows[0]?.total) || 0;
 }
