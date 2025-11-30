@@ -19,16 +19,16 @@ sudo bash install.sh
 
 ## 🔧 Se der erro "Permission denied"
 
-### Opção 1: Dar permissões manualmente
+### ✅ Solução Rápida (Execute isto)
+```bash
+sudo bash fix-permissions.sh
+```
+Isto **limpa tudo** e reinicia o serviço automaticamente.
+
+### Se continuar com erro:
 ```bash
 cd /home/usuario/finance.ao
 chmod +x install.sh deploy.sh init-db.sh
-sudo bash install.sh
-```
-
-### Opção 2: Dar permissões com sudo
-```bash
-sudo chmod +x install.sh deploy.sh init-db.sh
 sudo bash install.sh
 ```
 

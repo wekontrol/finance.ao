@@ -40,12 +40,17 @@ sudo chmod +x init-db.sh deploy.sh
 
 echo ">>> [5/7] Instalando dependências npm..."
 cd $APP_DIR
-sudo -u $APP_USER sh -c 'rm -rf node_modules dist package-lock.json' || true
 
-if ! sudo -u $APP_USER npm install --legacy-peer-deps 2>&1 | tail -5; then
+# Remove com sudo (não com sudo -u) para evitar permission denied
+echo "Limpando dependências antigas..."
+sudo rm -rf node_modules dist package-lock.json 2>/dev/null || true
+echo "✓ Limpeza concluída"
+
+echo "Instalando dependências npm..."
+sudo -u $APP_USER npm install --legacy-peer-deps 2>&1 | tail -5 || {
     echo "ERRO: npm install falhou!"
     exit 1
-fi
+}
 
 echo "Compilando frontend..."
 sudo -u $APP_USER npm run build 2>&1 | tail -5 || true
@@ -70,10 +75,10 @@ DB_HOST="localhost"
 DB_PORT="5432"
 
 sudo -u postgres psql <<EOF || true
+DROP DATABASE IF EXISTS $DB_NAME;
 DROP USER IF EXISTS $DB_USER;
 CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
 ALTER USER $DB_USER CREATEDB;
-DROP DATABASE IF EXISTS $DB_NAME;
 CREATE DATABASE $DB_NAME OWNER $DB_USER;
 ALTER DATABASE $DB_NAME OWNER TO $DB_USER;
 GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
