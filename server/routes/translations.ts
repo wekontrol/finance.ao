@@ -197,10 +197,10 @@ router.post('/import', requireTranslatorOrAdmin, async (req: Request, res: Respo
       if (value && typeof value === 'string' && value.trim()) {
         const id = `tr${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
         await pgPool.query(`
-          INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
+          INSERT INTO translations (id, language, \`key\`, \`value\`, created_by, updated_at, status)
           VALUES (?, ?, ?, ?, ?, ?, 'active')
           ON DUPLICATE KEY UPDATE
-            value = ?,
+            \`value\` = ?,
             created_by = ?,
             updated_at = ?,
             status = 'active'
@@ -361,10 +361,10 @@ router.post('/save-with-history', requireTranslatorOrAdmin, async (req: Request,
     
     // Save new translation
     await pgPool.query(`
-      INSERT INTO translations (id, language, key, value, created_by, updated_at, status)
+      INSERT INTO translations (id, language, \`key\`, \`value\`, created_by, updated_at, status)
       VALUES (?, ?, ?, ?, ?, NOW(), 'active')
       ON DUPLICATE KEY UPDATE
-        value = ?,
+        \`value\` = ?,
         updated_at = NOW(),
         status = 'active'
     `, [translationId, language, key, value, userId]);

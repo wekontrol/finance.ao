@@ -186,7 +186,7 @@ router.post('/', async (req: Request, res: Response) => {
   const nextDueDate = isRecurring ? calculateNextDueDate(date, frequency) : null;
 
   await pgPool.query(`
-    INSERT INTO transactions (id, user_id, description, amount, date, category, type, is_recurring, frequency, next_due_date)
+    INSERT INTO transactions (id, user_id, description, amount, \`date\`, category, type, is_recurring, frequency, next_due_date)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [id, userId, description, amount, date, category, type, isRecurring ? true : false, frequency || null, nextDueDate]);
 
@@ -228,7 +228,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
   await pgPool.query(`
     UPDATE transactions 
-    SET description = ?, amount = ?, date = ?, category = ?, type = ?, is_recurring = ?, frequency = ?
+    SET description = ?, amount = ?, \`date\` = ?, category = ?, type = ?, is_recurring = ?, frequency = ?
     WHERE id = ?
   `, [description, amount, date, category, type, isRecurring ? true : false, frequency || null, id]);
 

@@ -177,12 +177,12 @@ router.get('/analyze', async (req: Request, res: Response) => {
 
     const monthlySpendingResult = await pgPool.query(`
       SELECT 
-        LEFT(date, 7) as date,
+        LEFT(\`date\`, 7) as date,
         SUM(amount) as spent
       FROM transactions
       WHERE user_id = ? AND type = 'DESPESA'
-      GROUP BY LEFT(date, 7)
-      ORDER BY date DESC
+      GROUP BY LEFT(\`date\`, 7)
+      ORDER BY \`date\` DESC
       LIMIT 12
     `, [userId]);
 

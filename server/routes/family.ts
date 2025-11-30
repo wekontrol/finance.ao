@@ -207,7 +207,7 @@ router.put('/events/:id', async (req: Request, res: Response) => {
 
   await pgPool.query(`
     UPDATE family_events 
-    SET title = ?, date = ?, type = ?, description = ?
+    SET title = ?, \`date\` = ?, type = ?, description = ?
     WHERE id = ?
   `, [newValues.title, newValues.date, newValues.type, newValues.description, id]);
 

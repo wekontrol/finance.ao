@@ -229,7 +229,7 @@ router.post('/import', requireAuth, async (req: Request, res: Response) => {
 
         const now = new Date().toISOString();
         await pgPool.query(
-          `INSERT INTO transactions (id, user_id, date, description, category, type, amount, created_at)
+          `INSERT INTO transactions (id, user_id, \`date\`, description, category, type, amount, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

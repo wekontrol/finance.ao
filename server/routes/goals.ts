@@ -127,7 +127,7 @@ router.post('/:id/contribute', async (req: Request, res: Response) => {
     const updatedGoalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = ?', [id]);
     const updatedGoal = updatedGoalResult.rows[0];
     
-    const historyResult = await pgPool.query('SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY date DESC', [id]);
+    const historyResult = await pgPool.query('SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY \`date\` DESC', [id]);
     const history = historyResult.rows;
 
     res.json({
@@ -171,7 +171,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const goalResult = await pgPool.query('SELECT * FROM savings_goals WHERE id = ?', [id]);
     const goal = goalResult.rows[0];
     
-    const historyResult = await pgPool.query('SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY date DESC', [id]);
+    const historyResult = await pgPool.query('SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY \`date\` DESC', [id]);
     const history = historyResult.rows;
 
     res.json({

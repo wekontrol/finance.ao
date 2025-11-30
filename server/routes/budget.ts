@@ -323,7 +323,7 @@ router.get('/summary', async (req: Request, res: Response) => {
   const transactionsResult = await pgPool.query(
     `SELECT category, SUM(amount) as total
      FROM transactions
-     WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < ?
+     WHERE user_id = ? AND type = 'DESPESA' AND \`date\` >= ? AND \`date\` < ?
      GROUP BY category`,
     [userId, monthStart, monthEndStr]
   );
@@ -393,7 +393,7 @@ router.post('/history/save', async (req: Request, res: Response) => {
     const transactionsResult = await pgPool.query(
       `SELECT category, SUM(amount) as total
        FROM transactions
-       WHERE user_id = ? AND type = 'DESPESA' AND date >= ? AND date < DATE_ADD(?, INTERVAL 1 MONTH)
+       WHERE user_id = ? AND type = 'DESPESA' AND \`date\` >= ? AND \`date\` < DATE_ADD(?, INTERVAL 1 DAY)
        GROUP BY category`,
       [userId, `${currentMonth}-01`, `${currentMonth}-01`]
     );
